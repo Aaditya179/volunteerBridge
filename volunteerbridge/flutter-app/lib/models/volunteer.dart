@@ -1,5 +1,4 @@
 /// Volunteer model for VolunteerBridge.
-library;
 
 class Volunteer {
   final String? id;

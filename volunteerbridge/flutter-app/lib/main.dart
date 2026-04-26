@@ -1,5 +1,4 @@
 /// VolunteerBridge mobile application entry point.
-library;
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -16,6 +15,7 @@ import 'screens/task_feed_screen.dart';
 import 'services/auth_service.dart';
 import 'services/notification_service.dart';
 import 'utils/theme.dart';
+import 'utils/constants.dart';
 
 /// Top-level background message handler — must be top-level function.
 @pragma('vm:entry-point')
@@ -93,7 +93,10 @@ class VolunteerBridgeApp extends ConsumerWidget {
         ),
         ShellRoute(
           builder: (context, state, child) {
-            return _MainShell(child: child);
+            return _MainShell(
+              currentPath: state.matchedLocation,
+              child: child,
+            );
           },
           routes: [
             GoRoute(
@@ -118,48 +121,71 @@ class VolunteerBridgeApp extends ConsumerWidget {
   }
 }
 
-/// Main shell with bottom navigation bar.
-class _MainShell extends StatefulWidget {
+/// Main shell with bottom navigation bar that tracks the active route.
+class _MainShell extends StatelessWidget {
   final Widget child;
+  final String currentPath;
 
-  const _MainShell({required this.child});
+  const _MainShell({required this.child, required this.currentPath});
 
-  @override
-  State<_MainShell> createState() => _MainShellState();
-}
-
-class _MainShellState extends State<_MainShell> {
-  int _selectedIndex = 0;
+  int get _selectedIndex {
+    if (currentPath.startsWith('/my-tasks')) return 1;
+    return 0; // /tasks and /tasks/:id
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: widget.child,
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: (index) {
-          setState(() => _selectedIndex = index);
-          switch (index) {
-            case 0:
-              context.go('/tasks');
-              break;
-            case 1:
-              context.go('/my-tasks');
-              break;
-          }
-        },
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.list_alt_outlined),
-            activeIcon: Icon(Icons.list_alt),
-            label: 'Tasks',
+      body: child,
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.06),
+              blurRadius: 12,
+              offset: const Offset(0, -2),
+            ),
+          ],
+        ),
+        child: BottomNavigationBar(
+          currentIndex: _selectedIndex,
+          onTap: (index) {
+            switch (index) {
+              case 0:
+                context.go('/tasks');
+                break;
+              case 1:
+                context.go('/my-tasks');
+                break;
+            }
+          },
+          backgroundColor: Colors.white,
+          selectedItemColor: brandPrimary,
+          unselectedItemColor: const Color(0xFF9CA3AF),
+          type: BottomNavigationBarType.fixed,
+          elevation: 0,
+          selectedLabelStyle: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.assignment_outlined),
-            activeIcon: Icon(Icons.assignment),
-            label: 'My Tasks',
+          unselectedLabelStyle: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w400,
           ),
-        ],
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.list_alt_outlined),
+              activeIcon: Icon(Icons.list_alt),
+              label: 'Tasks',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.assignment_outlined),
+              activeIcon: Icon(Icons.assignment),
+              label: 'My Tasks',
+            ),
+          ],
+        ),
       ),
     );
   }

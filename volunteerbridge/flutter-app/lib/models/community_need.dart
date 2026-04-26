@@ -1,5 +1,4 @@
 /// CommunityNeed model for VolunteerBridge.
-library;
 
 import 'package:flutter/material.dart';
 import '../utils/constants.dart';

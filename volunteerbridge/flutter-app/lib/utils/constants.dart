@@ -1,5 +1,4 @@
 /// Application-wide constants for VolunteerBridge mobile app.
-library;
 
 import 'package:flutter/material.dart';
 
@@ -9,6 +8,9 @@ const String apiBaseUrl = 'http://localhost:8000';
 
 /// Default organization ID for multi-tenant Firestore paths.
 const String defaultOrgId = 'default';
+
+/// Google Maps API Key.
+const String googleMapsApiKey = 'AIzaSyAEUHasXQrhHR-j6x7XOdsgMjp9HGN3rDE';
 
 /// Urgency score thresholds.
 const int urgencyHighThreshold = 8;

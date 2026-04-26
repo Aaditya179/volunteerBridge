@@ -1,5 +1,4 @@
 /// App theme configuration for VolunteerBridge.
-library;
 
 import 'package:flutter/material.dart';
 import 'constants.dart';

@@ -1,5 +1,4 @@
 /// TaskCard widget displaying a community need in the feed.
-library;
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';

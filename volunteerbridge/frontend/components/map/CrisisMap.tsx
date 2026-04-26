@@ -74,17 +74,15 @@ export default function CrisisMap({
       const loader = new Loader({
         apiKey,
         version: "weekly",
-        libraries: ["marker"],
       });
 
       const google = await loader.load();
 
       if (!mapRef.current) return;
 
-      const map = new google.maps.Map(mapRef.current, {
+      const mapOptions: google.maps.MapOptions = {
         center: { lat: 20.5937, lng: 78.9629 },
         zoom: 5,
-        mapId: "volunteerbridge-crisis-map",
         disableDefaultUI: false,
         zoomControl: true,
         mapTypeControl: false,
@@ -96,7 +94,15 @@ export default function CrisisMap({
             stylers: [{ visibility: "off" }],
           },
         ],
-      });
+      };
+
+      // Only add mapId if it's explicitly created in console; 
+      // fallback to standard markers if not.
+      if (apiKey !== "YOUR_KEY_HERE") {
+        // mapOptions.mapId = "volunteerbridge-crisis-map"; 
+      }
+
+      const map = new google.maps.Map(mapRef.current, mapOptions);
 
       mapInstanceRef.current = map;
       setLoading(false);
@@ -124,18 +130,29 @@ export default function CrisisMap({
       clustererRef.current.clearMarkers();
     }
 
-    const newMarkers: google.maps.marker.AdvancedMarkerElement[] = [];
+    const newMarkers: google.maps.Marker[] = [];
 
     needs.forEach((need) => {
       if (!need.location?.lat || !need.location?.lng) return;
 
-      const markerElement = createMarkerElement(need.urgency_score, need.status);
-
-      const marker = new google.maps.marker.AdvancedMarkerElement({
+      const marker = new google.maps.Marker({
         map,
         position: { lat: need.location.lat, lng: need.location.lng },
-        content: markerElement,
         title: `${need.need_type} - Urgency: ${need.urgency_score}`,
+        icon: {
+          path: google.maps.SymbolPath.CIRCLE,
+          fillColor: getMarkerColor(need.urgency_score),
+          fillOpacity: need.status === "unassigned" ? 1 : 0.6,
+          strokeWeight: 3,
+          strokeColor: "#FFFFFF",
+          scale: 15,
+        },
+        label: {
+          text: String(need.urgency_score),
+          color: "#FFFFFF",
+          fontSize: "10px",
+          fontWeight: "800",
+        },
       });
 
       marker.addListener("click", () => {
@@ -145,7 +162,7 @@ export default function CrisisMap({
       newMarkers.push(marker);
     });
 
-    markersRef.current = newMarkers;
+    markersRef.current = newMarkers as any;
 
     if (newMarkers.length > 0) {
       clustererRef.current = new MarkerClusterer({
@@ -187,7 +204,7 @@ export default function CrisisMap({
           <span style={{ marginLeft: '12px', color: '#1A202C', fontSize: '14px', fontWeight: 500 }}>Loading map...</span>
         </div>
       )}
-      <div ref={mapRef} style={{ width: '100%', height: '100%' }} />
+      <div ref={mapRef} style={{ width: '100%', height: '100%', minHeight: '500px', backgroundColor: '#E2E8F0' }} />
 
       {/* Legend */}
       <div 

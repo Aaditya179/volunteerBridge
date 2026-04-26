@@ -1,5 +1,4 @@
 /// Login screen with Google Sign-In.
-library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

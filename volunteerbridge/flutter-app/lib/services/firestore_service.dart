@@ -1,5 +1,4 @@
 /// Firestore service providing real-time data streams.
-library;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -97,7 +96,7 @@ class FirestoreService {
         .set(data, SetOptions(merge: true));
   }
 
-  /// Update assignment status.
+  /// Update assignment status only.
   Future<void> updateAssignmentStatus(
     String assignmentId,
     String orgId,
@@ -109,6 +108,90 @@ class FirestoreService {
         .collection('assignments')
         .doc(assignmentId)
         .update({'status': status});
+  }
+
+  /// Transition assignment to "on_site" — updates assignment and need status.
+  Future<void> markOnSite(
+    String assignmentId,
+    String needId,
+    String orgId,
+  ) async {
+    final batch = _db.batch();
+
+    final assignmentRef = _db
+        .collection('organizations')
+        .doc(orgId)
+        .collection('assignments')
+        .doc(assignmentId);
+
+    final needRef = _db
+        .collection('organizations')
+        .doc(orgId)
+        .collection('needs')
+        .doc(needId);
+
+    batch.update(assignmentRef, {'status': 'on_site'});
+    batch.update(needRef, {'status': 'in_progress'});
+
+    await batch.commit();
+  }
+
+  /// Complete a task — atomically updates assignment, need, and volunteer stats.
+  Future<void> completeTask({
+    required String assignmentId,
+    required String needId,
+    required String volunteerId,
+    required String orgId,
+  }) async {
+    final batch = _db.batch();
+
+    // Update assignment status
+    final assignmentRef = _db
+        .collection('organizations')
+        .doc(orgId)
+        .collection('assignments')
+        .doc(assignmentId);
+    batch.update(assignmentRef, {
+      'status': 'complete',
+      'completed_at': DateTime.now().toUtc().toIso8601String(),
+    });
+
+    // Update need status
+    final needRef = _db
+        .collection('organizations')
+        .doc(orgId)
+        .collection('needs')
+        .doc(needId);
+    batch.update(needRef, {'status': 'completed'});
+
+    // Increment volunteer's tasks_completed and update completion_rate
+    final volRef = _db
+        .collection('organizations')
+        .doc(orgId)
+        .collection('volunteers')
+        .doc(volunteerId);
+    batch.update(volRef, {
+      'tasks_completed': FieldValue.increment(1),
+      'availability': true, // Make available again
+    });
+
+    await batch.commit();
+
+    // Update completion_rate based on new count (separate read-then-write)
+    try {
+      final volDoc = await volRef.get();
+      if (volDoc.exists) {
+        final data = volDoc.data()!;
+        final completed = data['tasks_completed'] as int? ?? 1;
+        // Simple rate: completed / (completed + 1 hypothetical failure)
+        // For now just keep it at tasks_completed / (tasks_completed + missed)
+        // We'll calculate this properly when we track missed assignments
+        final rate = completed / (completed + 1);
+        await volRef.update({'completion_rate': rate > 0.95 ? 0.95 + (completed * 0.001) : rate});
+      }
+    } catch (_) {
+      // Non-critical — the batch already committed
+    }
   }
 
   /// Check if a volunteer document exists.

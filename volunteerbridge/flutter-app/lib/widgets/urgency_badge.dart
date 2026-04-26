@@ -1,5 +1,4 @@
 /// Urgency badge pill widget.
-library;
 
 import 'package:flutter/material.dart';
 import '../utils/constants.dart';

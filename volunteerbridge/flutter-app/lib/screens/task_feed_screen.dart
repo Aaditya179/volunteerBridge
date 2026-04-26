@@ -1,5 +1,4 @@
-/// Task feed screen showing available community needs.
-library;
+/// Task feed screen showing available community needs with stats header.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -51,22 +50,25 @@ class _TaskFeedScreenState extends ConsumerState<TaskFeedScreen> {
       appBar: AppBar(
         title: const Text('VolunteerBridge'),
         actions: [
-          Row(
-            children: [
-              Text(
-                _isAvailable ? 'Available' : 'Unavailable',
-                style: TextStyle(
-                  fontSize: 13,
-                  color: _isAvailable ? accentTeal : const Color(0xFF9CA3AF),
-                  fontWeight: FontWeight.w600,
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: Row(
+              children: [
+                Text(
+                  _isAvailable ? 'Online' : 'Offline',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: _isAvailable ? accentTeal : const Color(0xFF9CA3AF),
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              ),
-              Switch(
-                value: _isAvailable,
-                onChanged: (_) => _toggleAvailability(),
-                activeColor: accentTeal,
-              ),
-            ],
+                Switch(
+                  value: _isAvailable,
+                  onChanged: (_) => _toggleAvailability(),
+                  activeColor: accentTeal,
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -79,26 +81,25 @@ class _TaskFeedScreenState extends ConsumerState<TaskFeedScreen> {
 
           if (snapshot.hasError) {
             return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(
-                    Icons.error_outline,
-                    size: 48,
-                    color: urgencyMediumColor,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Failed to load tasks',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    '${snapshot.error}',
-                    style: Theme.of(context).textTheme.bodySmall,
-                    textAlign: TextAlign.center,
-                  ),
-                ],
+              child: Padding(
+                padding: const EdgeInsets.all(32),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.cloud_off, size: 48, color: urgencyMediumColor),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Connection Error',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Unable to connect to the server.\nCheck your internet connection.',
+                      style: Theme.of(context).textTheme.bodySmall,
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
               ),
             );
           }
@@ -107,26 +108,38 @@ class _TaskFeedScreenState extends ConsumerState<TaskFeedScreen> {
           final availableNeeds =
               needs.where((n) => n.status == 'unassigned').toList();
 
+          final criticalCount =
+              availableNeeds.where((n) => n.urgencyScore >= 8).length;
+          final moderateCount =
+              availableNeeds.where((n) => n.urgencyScore >= 5 && n.urgencyScore < 8).length;
+          final lowCount =
+              availableNeeds.where((n) => n.urgencyScore < 5).length;
+
           if (availableNeeds.isEmpty) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    Icons.check_circle_outline,
-                    size: 64,
-                    color: Colors.grey[300],
+                  Container(
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      color: accentTeal.withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.check_circle_outline,
+                        size: 40, color: accentTeal),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 20),
                   Text(
-                    'No Tasks Available',
+                    'All Clear',
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          color: const Color(0xFF6B7280),
+                          fontWeight: FontWeight.w700,
                         ),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'All current needs have been assigned.\nCheck back soon!',
+                    'No tasks need attention right now.\nWe\'ll notify you when help is needed.',
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: const Color(0xFF9CA3AF),
@@ -138,19 +151,119 @@ class _TaskFeedScreenState extends ConsumerState<TaskFeedScreen> {
           }
 
           return RefreshIndicator(
+            color: brandPrimary,
             onRefresh: () async {
-              // Stream auto-refreshes, this just gives visual feedback
               await Future.delayed(const Duration(milliseconds: 500));
             },
-            child: ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: availableNeeds.length,
-              itemBuilder: (context, index) {
-                return TaskCard(need: availableNeeds[index]);
-              },
+            child: CustomScrollView(
+              slivers: [
+                // Stats header
+                SliverToBoxAdapter(
+                  child: Container(
+                    margin: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          brandPrimary,
+                          brandPrimary.withValues(alpha: 0.85),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '${availableNeeds.length} Tasks Available',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  _buildStatPill(
+                                      '$criticalCount', 'Critical', urgencyHighColor),
+                                  const SizedBox(width: 6),
+                                  _buildStatPill(
+                                      '$moderateCount', 'Moderate', urgencyMediumColor),
+                                  const SizedBox(width: 6),
+                                  _buildStatPill(
+                                      '$lowCount', 'Low', urgencyLowColor),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                        Container(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(
+                            Icons.notifications_active_outlined,
+                            color: Colors.white,
+                            size: 24,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                // Task list
+                SliverPadding(
+                  padding: const EdgeInsets.all(16),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        return TaskCard(need: availableNeeds[index]);
+                      },
+                      childCount: availableNeeds.length,
+                    ),
+                  ),
+                ),
+              ],
             ),
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildStatPill(String count, String label, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 6,
+            height: 6,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          ),
+          const SizedBox(width: 4),
+          Text(
+            '$count $label',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -1,5 +1,4 @@
 /// MatchResult model for VolunteerBridge.
-library;
 
 import 'volunteer.dart';
 

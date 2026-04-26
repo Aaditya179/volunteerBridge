@@ -1,5 +1,4 @@
 /// Skill tag widget — small rounded chip with teal background.
-library;
 
 import 'package:flutter/material.dart';
 import '../utils/constants.dart';

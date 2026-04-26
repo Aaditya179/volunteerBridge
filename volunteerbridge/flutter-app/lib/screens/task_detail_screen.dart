@@ -1,10 +1,10 @@
-/// Task detail screen showing full need information and accept action.
-library;
+/// Task detail screen — full spec layout with urgency bar, accept flow, and navigation.
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../services/api_service.dart';
 import '../services/firestore_service.dart';
 import '../utils/constants.dart';
@@ -27,6 +27,32 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
+    // Confirmation dialog
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Accept This Task?'),
+        content: const Text(
+          'You will be assigned to this crisis task. '
+          'The coordinator will be notified and your location will be shared.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: ElevatedButton.styleFrom(backgroundColor: accentTeal),
+            child: const Text('Accept'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
     setState(() => _accepting = true);
 
     try {
@@ -41,11 +67,11 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
         if (success) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Task accepted successfully!'),
+              content: Text('Task accepted! Check My Tasks.'),
               backgroundColor: accentTeal,
             ),
           );
-          context.go('/tasks');
+          context.go('/my-tasks');
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -59,13 +85,22 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error: $e'),
+            content: Text('Error: ${e.toString().replaceAll("Exception: ", "")}'),
             backgroundColor: urgencyHighColor,
           ),
         );
       }
     } finally {
       if (mounted) setState(() => _accepting = false);
+    }
+  }
+
+  Future<void> _openMaps(double lat, double lng) async {
+    final uri = Uri.parse(
+      'https://www.google.com/maps/dir/?api=1&destination=$lat,$lng&travelmode=driving',
+    );
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
   }
 
@@ -76,41 +111,54 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Task Details'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.go('/tasks'),
+        ),
       ),
       body: FutureBuilder(
         future: firestoreService.getNeed(widget.needId, defaultOrgId),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(
+              child: CircularProgressIndicator(color: brandPrimary),
+            );
           }
 
           if (snapshot.hasError || snapshot.data == null) {
             return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(
-                    Icons.error_outline,
-                    size: 48,
-                    color: urgencyMediumColor,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Task not found',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 8),
-                  ElevatedButton(
-                    onPressed: () => context.go('/tasks'),
-                    child: const Text('Back to Tasks'),
-                  ),
-                ],
+              child: Padding(
+                padding: const EdgeInsets.all(32),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.search_off, size: 48, color: Color(0xFF9CA3AF)),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Task Not Found',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'This task may have been assigned or removed.',
+                      style: Theme.of(context).textTheme.bodySmall,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 24),
+                    ElevatedButton(
+                      onPressed: () => context.go('/tasks'),
+                      child: const Text('Back to Tasks'),
+                    ),
+                  ],
+                ),
               ),
             );
           }
 
           final need = snapshot.data!;
           final isAssigned = need.status != 'unassigned';
+          final lat = (need.location['lat'] as num?)?.toDouble() ?? 0.0;
+          final lng = (need.location['lng'] as num?)?.toDouble() ?? 0.0;
 
           return Column(
             children: [
@@ -120,68 +168,96 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Urgency badge and score
-                      Row(
-                        children: [
-                          UrgencyBadge(urgencyScore: need.urgencyScore),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Urgency: ${need.urgencyScore}/10',
-                            style:
-                                Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      color: const Color(0xFF6B7280),
-                                    ),
+                      // Urgency header card
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              need.urgencyColor.withValues(alpha: 0.1),
+                              need.urgencyColor.withValues(alpha: 0.03),
+                            ],
                           ),
-                        ],
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      // Need type as title
-                      Text(
-                        need.needType,
-                        style:
-                            Theme.of(context).textTheme.headlineMedium?.copyWith(
-                                  fontWeight: FontWeight.w800,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: need.urgencyColor.withValues(alpha: 0.2),
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                UrgencyBadge(urgencyScore: need.urgencyScore),
+                                const Spacer(),
+                                Text(
+                                  _timeAgo(need.createdAt),
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodySmall
+                                      ?.copyWith(
+                                        color: const Color(0xFF9CA3AF),
+                                      ),
                                 ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              need.needType,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .headlineMedium
+                                  ?.copyWith(fontWeight: FontWeight.w800),
+                            ),
+                            const SizedBox(height: 12),
+                            // Urgency bar (10 segments)
+                            _buildUrgencyBar(need.urgencyScore),
+                          ],
+                        ),
                       ),
 
                       const SizedBox(height: 20),
 
-                      // Location
-                      _buildDetailRow(
-                        context,
+                      // Details section
+                      Text(
+                        'Details',
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                      ),
+                      const SizedBox(height: 12),
+
+                      _buildDetailTile(
                         Icons.location_on_outlined,
-                        'Location',
+                        'Zone',
                         need.zone,
                       ),
-
-                      const SizedBox(height: 12),
-
-                      // Volunteer hours
-                      _buildDetailRow(
-                        context,
+                      _buildDetailTile(
                         Icons.schedule_outlined,
-                        'Volunteer Hours',
+                        'Estimated Duration',
                         '${need.volunteerHoursNeeded}h',
                       ),
-
-                      const SizedBox(height: 12),
-
-                      // Status
-                      _buildDetailRow(
-                        context,
+                      _buildDetailTile(
                         Icons.info_outline,
                         'Status',
-                        need.status.toUpperCase(),
+                        need.status.toUpperCase().replaceAll('_', ' '),
                       ),
+                      if (need.confidenceScore != null)
+                        _buildDetailTile(
+                          Icons.psychology_outlined,
+                          'AI Confidence',
+                          '${(need.confidenceScore! * 100).round()}%',
+                        ),
 
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 20),
 
-                      // Required skills
+                      // Skills section
                       Text(
                         'Required Skills',
-                        style: Theme.of(context).textTheme.titleMedium,
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
                       ),
                       const SizedBox(height: 12),
                       Wrap(
@@ -192,34 +268,50 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
                             .toList(),
                       ),
 
+                      // Navigate button (shown if location exists)
+                      if (lat != 0.0 && lng != 0.0) ...[
+                        const SizedBox(height: 20),
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            onPressed: () => _openMaps(lat, lng),
+                            icon: const Icon(Icons.directions),
+                            label: const Text('Open in Google Maps'),
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              side: const BorderSide(color: brandPrimary),
+                            ),
+                          ),
+                        ),
+                      ],
+
                       if (isAssigned) ...[
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 20),
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: brandPrimary.withOpacity(0.08),
+                            color: brandPrimary.withValues(alpha: 0.08),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: brandPrimary.withOpacity(0.2),
+                              color: brandPrimary.withValues(alpha: 0.2),
                             ),
                           ),
                           child: Row(
                             children: [
-                              Icon(
-                                Icons.check_circle,
-                                color: brandPrimary,
-                                size: 24,
-                              ),
+                              const Icon(Icons.check_circle,
+                                  color: brandPrimary, size: 24),
                               const SizedBox(width: 12),
-                              Text(
-                                'This task has already been assigned.',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodyMedium
-                                    ?.copyWith(
-                                      color: brandPrimary,
-                                      fontWeight: FontWeight.w600,
-                                    ),
+                              Expanded(
+                                child: Text(
+                                  'This task has been assigned.',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodyMedium
+                                      ?.copyWith(
+                                        color: brandPrimary,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                ),
                               ),
                             ],
                           ),
@@ -233,8 +325,18 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
               // Accept button
               if (!isAssigned)
                 SafeArea(
-                  child: Padding(
+                  child: Container(
                     padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.05),
+                          blurRadius: 10,
+                          offset: const Offset(0, -4),
+                        ),
+                      ],
+                    ),
                     child: SizedBox(
                       width: double.infinity,
                       height: 56,
@@ -242,20 +344,23 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
                         onPressed: _accepting ? null : _acceptTask,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: accentTeal,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
                         ),
                         child: _accepting
                             ? const SizedBox(
-                                width: 20,
-                                height: 20,
+                                width: 22,
+                                height: 22,
                                 child: CircularProgressIndicator(
-                                  strokeWidth: 2,
+                                  strokeWidth: 2.5,
                                   color: Colors.white,
                                 ),
                               )
                             : const Text(
                                 'Accept Task',
                                 style: TextStyle(
-                                  fontSize: 16,
+                                  fontSize: 17,
                                   fontWeight: FontWeight.w700,
                                 ),
                               ),
@@ -270,32 +375,79 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
     );
   }
 
-  Widget _buildDetailRow(
-    BuildContext context,
-    IconData icon,
-    String label,
-    String value,
-  ) {
+  Widget _buildUrgencyBar(int score) {
     return Row(
-      children: [
-        Icon(icon, size: 20, color: const Color(0xFF9CA3AF)),
-        const SizedBox(width: 12),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              label,
-              style: Theme.of(context).textTheme.bodySmall,
+      children: List.generate(10, (index) {
+        final filled = index < score;
+        Color color;
+        if (index < 4) {
+          color = urgencyLowColor;
+        } else if (index < 7) {
+          color = urgencyMediumColor;
+        } else {
+          color = urgencyHighColor;
+        }
+
+        return Expanded(
+          child: Container(
+            height: 6,
+            margin: EdgeInsets.only(right: index < 9 ? 3 : 0),
+            decoration: BoxDecoration(
+              color: filled ? color : const Color(0xFFE5E7EB),
+              borderRadius: BorderRadius.circular(3),
             ),
-            Text(
-              value,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-            ),
-          ],
-        ),
-      ],
+          ),
+        );
+      }),
     );
+  }
+
+  Widget _buildDetailTile(IconData icon, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: const Color(0xFFF3F4F6),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, size: 20, color: const Color(0xFF6B7280)),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: const Color(0xFF9CA3AF),
+                      ),
+                ),
+                Text(
+                  value,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _timeAgo(DateTime? date) {
+    if (date == null) return 'Just posted';
+    final now = DateTime.now();
+    final diff = now.difference(date);
+    if (diff.inMinutes < 1) return 'Just posted';
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+    if (diff.inHours < 24) return '${diff.inHours}h ago';
+    return '${diff.inDays}d ago';
   }
 }

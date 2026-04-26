@@ -1,5 +1,4 @@
 /// Match score chip — circular progress indicator with percentage.
-library;
 
 import 'package:flutter/material.dart';
 import '../utils/constants.dart';
