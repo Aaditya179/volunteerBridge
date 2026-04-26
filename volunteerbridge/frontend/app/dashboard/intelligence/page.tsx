@@ -5,11 +5,6 @@
 "use client";
 
 import { useState } from "react";
-import CrisisReportCard from "@/components/intake/CrisisReport";
-import { UrgencyBadge } from "@/components/ui/Badge";
-import Button from "@/components/ui/Button";
-import Card from "@/components/ui/Card";
-import Spinner from "@/components/ui/Spinner";
 import { useNeeds, useCrisisReport } from "@/hooks/useFirestore";
 import { matchVolunteers, assignVolunteer } from "@/lib/api";
 import { Zap, AlertTriangle } from "lucide-react";
@@ -18,18 +13,12 @@ const ORG_ID = "default";
 
 export default function IntelligencePage() {
   const { needs, loading: needsLoading } = useNeeds(ORG_ID);
-  const {
-    report,
-    loading: reportLoading,
-    error: reportError,
-    refresh: refreshReport,
-  } = useCrisisReport(ORG_ID);
-
+  
   const [autoAssigning, setAutoAssigning] = useState(false);
   const [assignResults, setAssignResults] = useState<string[]>([]);
 
-  const activeNeeds = needs.filter((n) => n.status === "unassigned");
-  const urgentNeeds = activeNeeds.filter((n) => n.urgency_score >= 8);
+  const unassignedNeeds = needs.filter((n) => n.status === "unassigned");
+  const urgentNeeds = unassignedNeeds.filter((n) => n.urgency_score >= 8);
 
   const handleAutoAssignUrgent = async () => {
     if (urgentNeeds.length === 0) return;
@@ -61,154 +50,191 @@ export default function IntelligencePage() {
     setAutoAssigning(false);
   };
 
+  const getUrgencyCircle = (score: number) => {
+    if (score >= 8) return { bg: '#FEE2E2', border: '#FECACA', text: '#E24B4A' };
+    if (score >= 5) return { bg: '#FEF3C7', border: '#FDE68A', text: '#EF9F27' };
+    return { bg: '#ECFDF5', border: '#D1FAE5', text: '#1D9E75' };
+  };
+
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Crisis Report */}
-      <CrisisReportCard
-        report={report}
-        loading={reportLoading}
-        error={reportError}
-        onRefresh={refreshReport}
-      />
+    <div className="flex flex-col" style={{ gap: '24px', paddingBottom: '32px' }}>
+      
+      <div className="flex flex-col mb-4" style={{ gap: '4px' }}>
+        <h2 style={{ fontSize: '24px', fontWeight: 700, color: '#1A202C', margin: 0 }}>
+          Intelligence Insights
+        </h2>
+        <p style={{ fontSize: '14px', color: '#64748B', margin: 0 }}>
+          AI-driven analysis of volunteer deployment and community needs
+        </p>
+      </div>
 
-      {/* Auto-assign */}
-      <Card>
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900">
-              Urgent Needs Auto-Assignment
-            </h3>
-            <p className="text-sm text-gray-500 mt-0.5">
-              Automatically match and assign top volunteers to all needs with
-              urgency ≥ 8
-            </p>
-          </div>
-          <Button
-            variant="danger"
-            loading={autoAssigning}
-            onClick={handleAutoAssignUrgent}
-            disabled={urgentNeeds.length === 0}
-          >
-            <Zap size={16} className="mr-1.5" />
-            Auto-assign {urgentNeeds.length} urgent
-          </Button>
-        </div>
-
-        {assignResults.length > 0 && (
-          <div className="bg-gray-50 rounded-lg p-4 space-y-1.5">
-            {assignResults.map((result, i) => (
-              <p
-                key={i}
-                className={`text-sm ${
-                  result.startsWith("✓")
-                    ? "text-accent-teal"
-                    : "text-urgency-critical"
-                }`}
-              >
-                {result}
-              </p>
-            ))}
-          </div>
-        )}
-      </Card>
-
-      {/* Active needs table */}
-      <Card padding="none">
-        <div className="px-5 py-4 border-b border-gray-100">
-          <h3 className="text-lg font-semibold text-gray-900">
-            All Active Needs
+      {/* Auto-assign Panel */}
+      <div 
+        className="flex flex-col sm:flex-row sm:items-center justify-between"
+        style={{
+          backgroundColor: 'white',
+          border: '1px solid #E2E8F0',
+          borderRadius: '8px',
+          padding: '20px',
+          gap: '16px',
+          boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+        }}
+      >
+        <div className="flex flex-col">
+          <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#1A202C', marginBottom: '4px' }}>
+            Urgent Needs Auto-Assignment
           </h3>
-          <p className="text-sm text-gray-500 mt-0.5">
-            {activeNeeds.length} unassigned needs
+          <p style={{ fontSize: '14px', color: '#64748B' }}>
+            Automatically match and assign top volunteers to all needs with urgency ≥ 8
           </p>
+        </div>
+        <button
+          onClick={handleAutoAssignUrgent}
+          disabled={urgentNeeds.length === 0 || autoAssigning}
+          className="shrink-0 flex items-center justify-center cursor-pointer transition-colors"
+          style={{
+            padding: '8px 16px',
+            backgroundColor: urgentNeeds.length === 0 || autoAssigning ? '#FCA5A5' : '#E24B4A',
+            color: 'white',
+            borderRadius: '4px',
+            fontWeight: 700,
+            fontSize: '14px',
+            gap: '8px',
+            border: 'none',
+            boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+          }}
+          onMouseEnter={(e) => { if (!(urgentNeeds.length === 0 || autoAssigning)) e.currentTarget.style.backgroundColor = '#B91C1C'; }}
+          onMouseLeave={(e) => { if (!(urgentNeeds.length === 0 || autoAssigning)) e.currentTarget.style.backgroundColor = '#E24B4A'; }}
+        >
+          <Zap size={16} className={autoAssigning ? "animate-pulse" : ""} />
+          Auto-assign {urgentNeeds.length} urgent
+        </button>
+      </div>
+
+      {assignResults.length > 0 && (
+        <div 
+          className="flex flex-col"
+          style={{ padding: '16px', backgroundColor: 'white', border: '1px solid #E2E8F0', borderRadius: '8px', gap: '8px', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}
+        >
+          {assignResults.map((result, i) => (
+            <p
+              key={i}
+              style={{
+                fontSize: '13px',
+                fontWeight: 500,
+                color: result.startsWith("✓") ? '#1D9E75' : '#E24B4A',
+                margin: 0
+              }}
+            >
+              {result}
+            </p>
+          ))}
+        </div>
+      )}
+
+      {/* Intelligence Analytics Table */}
+      <div 
+        style={{
+          backgroundColor: 'white',
+          border: '1px solid #E2E8F0',
+          borderRadius: '8px',
+          overflow: 'hidden',
+          boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+        }}
+      >
+        <div className="flex flex-row justify-between items-center" style={{ padding: '16px 20px', borderBottom: '1px solid #E2E8F0', backgroundColor: 'white' }}>
+          <h3 style={{ fontSize: '16px', fontWeight: 600, color: '#1A202C', margin: 0 }}>
+            Intelligence Analytics Table
+          </h3>
+          <span style={{ fontSize: '13px', fontWeight: 500, color: '#64748B' }}>
+            {needs.length} Total Records
+          </span>
         </div>
 
         {needsLoading ? (
-          <div className="py-12">
-            <Spinner size="md" label="Loading needs..." />
+          <div className="flex justify-center" style={{ padding: '48px 0' }}>
+             <div className="animate-spin" style={{ width: '24px', height: '24px', borderRadius: '50%', border: '2px solid #E2E8F0', borderTopColor: '#185FA5' }} />
           </div>
-        ) : activeNeeds.length === 0 ? (
-          <div className="py-12 text-center">
-            <p className="text-sm text-gray-500">No active needs found.</p>
+        ) : needs.length === 0 ? (
+          <div className="text-center" style={{ padding: '48px 0' }}>
+            <p style={{ fontSize: '14px', color: '#64748B' }}>No analytics data available.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse' }}>
               <thead>
-                <tr className="bg-gray-50 border-b border-gray-100">
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Need
-                  </th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Urgency
-                  </th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Zone
-                  </th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Skills
-                  </th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Hours
-                  </th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
+                <tr style={{ backgroundColor: '#F8FAFC', borderBottom: '1px solid #E2E8F0', fontSize: '13px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  <th style={{ padding: '12px 20px', whiteSpace: 'nowrap' }}>ID</th>
+                  <th style={{ padding: '12px 20px', whiteSpace: 'nowrap' }}>Status</th>
+                  <th style={{ padding: '12px 20px', whiteSpace: 'nowrap' }}>Type</th>
+                  <th style={{ padding: '12px 20px', whiteSpace: 'nowrap' }}>Details</th>
+                  <th style={{ padding: '12px 20px', whiteSpace: 'nowrap' }}>Location</th>
+                  <th style={{ padding: '12px 20px', whiteSpace: 'nowrap', textAlign: 'center' }}>Urgency</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
-                {activeNeeds.map((need, i) => (
-                  <tr
-                    key={need.id || i}
-                    className="hover:bg-gray-50 transition-colors"
-                  >
-                    <td className="px-5 py-3">
-                      <p className="text-sm font-medium text-gray-900">
+              <tbody style={{ borderBottom: '1px solid #E2E8F0' }}>
+                {needs.map((need, i) => {
+                  const idStr = need.id ? need.id.substring(0, 6).toUpperCase() : `N-${i+1000}`;
+                  const isAssigned = need.status !== "unassigned";
+                  const detailsText = need.raw_text || need.required_skills.join(", ");
+                  const truncatedDetails = detailsText.length > 60 ? detailsText.substring(0, 60) + "..." : detailsText;
+                  const urgencyStyle = getUrgencyCircle(need.urgency_score);
+
+                  return (
+                    <tr
+                      key={need.id || i}
+                      style={{ fontSize: '14px', color: '#1A202C', borderBottom: '1px solid #E2E8F0', transition: 'background-color 0.2s', cursor: 'pointer' }}
+                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F8FAFC'}
+                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                    >
+                      <td style={{ padding: '16px 20px', fontWeight: 500, color: '#64748B' }}>
+                        #{idStr}
+                      </td>
+                      <td style={{ padding: '16px 20px', whiteSpace: 'nowrap' }}>
+                        <div className="flex flex-row items-center" style={{ gap: '8px' }}>
+                           <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: isAssigned ? '#1D9E75' : '#FBBF24' }} />
+                           <span style={{ textTransform: 'capitalize' }}>{isAssigned ? 'Assigned' : 'Pending'}</span>
+                        </div>
+                      </td>
+                      <td style={{ padding: '16px 20px', fontWeight: 600 }}>
                         {need.need_type}
-                      </p>
-                    </td>
-                    <td className="px-5 py-3">
-                      <UrgencyBadge score={need.urgency_score} />
-                    </td>
-                    <td className="px-5 py-3">
-                      <p className="text-sm text-gray-600">
+                      </td>
+                      <td style={{ padding: '16px 20px', color: '#64748B', maxWidth: '250px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={detailsText}>
+                        {truncatedDetails}
+                      </td>
+                      <td style={{ padding: '16px 20px', whiteSpace: 'nowrap' }}>
                         {need.location.zone}
-                      </p>
-                    </td>
-                    <td className="px-5 py-3">
-                      <div className="flex gap-1 flex-wrap">
-                        {need.required_skills.slice(0, 2).map((s) => (
-                          <span
-                            key={s}
-                            className="text-[11px] px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full"
-                          >
-                            {s}
-                          </span>
-                        ))}
-                        {need.required_skills.length > 2 && (
-                          <span className="text-[11px] text-gray-400">
-                            +{need.required_skills.length - 2}
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-5 py-3">
-                      <p className="text-sm text-gray-600">
-                        {need.volunteer_hours_needed}h
-                      </p>
-                    </td>
-                    <td className="px-5 py-3">
-                      <span className="px-2 py-0.5 text-xs font-medium bg-yellow-100 text-yellow-700 rounded-full">
-                        {need.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td style={{ padding: '16px 20px', textAlign: 'center' }}>
+                        <div 
+                          className="inline-flex items-center justify-center"
+                          style={{
+                            width: '28px', height: '28px', borderRadius: '50%', border: `1px solid ${urgencyStyle.border}`,
+                            backgroundColor: urgencyStyle.bg, color: urgencyStyle.text, fontSize: '12px', fontWeight: 700
+                          }}
+                        >
+                           {need.urgency_score}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
         )}
-      </Card>
+
+        {/* Pagination Footer */}
+        <div className="flex flex-row items-center justify-between" style={{ padding: '12px 20px', backgroundColor: 'white' }}>
+           <button style={{ fontSize: '13px', fontWeight: 500, color: '#64748B', background: 'none', border: 'none', cursor: 'pointer' }} onMouseEnter={e=>e.currentTarget.style.color='#1A202C'} onMouseLeave={e=>e.currentTarget.style.color='#64748B'}>Previous</button>
+           <div className="flex flex-row items-center" style={{ gap: '8px', fontSize: '13px' }}>
+              <button className="flex items-center justify-center" style={{ width: '28px', height: '28px', borderRadius: '4px', backgroundColor: '#185FA5', color: 'white', fontWeight: 700, border: 'none', cursor: 'pointer' }}>1</button>
+              <button className="flex items-center justify-center" style={{ width: '28px', height: '28px', borderRadius: '4px', backgroundColor: 'transparent', color: '#1A202C', fontWeight: 500, border: 'none', cursor: 'pointer' }} onMouseEnter={e=>e.currentTarget.style.backgroundColor='#F8FAFC'} onMouseLeave={e=>e.currentTarget.style.backgroundColor='transparent'}>2</button>
+              <button className="flex items-center justify-center" style={{ width: '28px', height: '28px', borderRadius: '4px', backgroundColor: 'transparent', color: '#1A202C', fontWeight: 500, border: 'none', cursor: 'pointer' }} onMouseEnter={e=>e.currentTarget.style.backgroundColor='#F8FAFC'} onMouseLeave={e=>e.currentTarget.style.backgroundColor='transparent'}>3</button>
+           </div>
+           <button style={{ fontSize: '13px', fontWeight: 500, color: '#64748B', background: 'none', border: 'none', cursor: 'pointer' }} onMouseEnter={e=>e.currentTarget.style.color='#1A202C'} onMouseLeave={e=>e.currentTarget.style.color='#64748B'}>Next</button>
+        </div>
+      </div>
     </div>
   );
 }

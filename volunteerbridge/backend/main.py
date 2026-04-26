@@ -43,24 +43,28 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Initialize Firebase Admin SDK
-if not firebase_admin._apps:
+try:
     cred_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS", "./serviceAccountKey.json")
     if os.path.exists(cred_path):
         cred = credentials.Certificate(cred_path)
         firebase_admin.initialize_app(cred)
+        logger.info("Firebase initialized with service account.")
     else:
         firebase_admin.initialize_app()
-        logger.warning(
-            "No service account key found at %s. Using Application Default Credentials.",
-            cred_path,
-        )
-
-db = firestore.client()
+        logger.info("Firebase initialized with default credentials.")
+    db = firestore.client()
+except Exception as e:
+    logger.error(f"Firebase initialization failed: {e}")
+    db = None
 
 # Initialize Gemini
 gemini_api_key = os.getenv("GEMINI_API_KEY")
 if gemini_api_key:
-    genai.configure(api_key=gemini_api_key)
+    try:
+        genai.configure(api_key=gemini_api_key)
+        logger.info("Gemini AI configured.")
+    except Exception as e:
+        logger.error(f"Gemini configuration failed: {e}")
 else:
     logger.warning("GEMINI_API_KEY not set. AI features will not work.")
 

@@ -9,50 +9,69 @@ import CrisisMap from "@/components/map/CrisisMap";
 import AssignmentPanel from "@/components/map/AssignmentPanel";
 import { useNeeds } from "@/hooks/useFirestore";
 import type { CommunityNeed } from "@/types";
-import Spinner from "@/components/ui/Spinner";
-
-const ORG_ID = "default";
 
 export default function MapPage() {
-  const { needs, loading, error } = useNeeds(ORG_ID);
+  const { needs } = useNeeds("default");
   const [selectedNeed, setSelectedNeed] = useState<CommunityNeed | null>(null);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-[calc(100vh-8rem)]">
-        <Spinner size="lg" label="Loading crisis data..." />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex items-center justify-center h-[calc(100vh-8rem)]">
-        <div className="text-center">
-          <p className="text-lg font-semibold text-gray-900 mb-2">Error Loading Data</p>
-          <p className="text-sm text-gray-500">{error}</p>
-        </div>
-      </div>
-    );
-  }
+  const pendingNeeds = needs.filter(n => n.status === "unassigned").length;
 
   return (
-    <div className="relative h-[calc(100vh-8rem)] -m-6">
-      <CrisisMap
-        needs={needs}
-        onMarkerClick={setSelectedNeed}
-        className="w-full h-full"
-      />
+    <div 
+      className="flex flex-col"
+      style={{
+        position: 'relative',
+        height: 'calc(100vh - 64px)', 
+        margin: '-24px', 
+        overflow: 'hidden'
+      }}
+    >
+      {/* Floating Panel Top-Left */}
+      <div 
+        style={{
+          position: 'absolute',
+          top: '16px',
+          left: '16px',
+          zIndex: 5,
+          backgroundColor: 'rgba(255, 255, 255, 0.9)',
+          border: '1px solid #E2E8F0',
+          borderRadius: '6px',
+          padding: '12px 16px',
+          backdropFilter: 'blur(4px)',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+        }}
+      >
+        <p style={{ fontSize: '14px', fontWeight: 700, color: '#1A202C', margin: 0, lineHeight: 1 }}>
+          {pendingNeeds} Needs Pending
+        </p>
+        <p style={{ fontSize: '12px', color: '#64748B', marginTop: '4px', margin: '4px 0 0 0', lineHeight: 1 }}>
+          Click a marker to assign
+        </p>
+      </div>
 
+      {/* Map Container */}
+      <div style={{ flex: 1, minHeight: 0, position: 'relative' }}>
+        <CrisisMap
+          needs={needs}
+          onMarkerClick={setSelectedNeed}
+        />
+      </div>
+
+      {/* Slide-in Assignment Panel */}
       {selectedNeed && (
         <>
           <div
-            className="fixed inset-0 bg-black/20 z-40"
             onClick={() => setSelectedNeed(null)}
+            style={{
+              position: 'fixed',
+              inset: 0,
+              backgroundColor: 'transparent',
+              zIndex: 30
+            }}
           />
           <AssignmentPanel
             need={selectedNeed}
-            orgId={ORG_ID}
+            orgId="default"
             onClose={() => setSelectedNeed(null)}
             onAssigned={() => setSelectedNeed(null)}
           />

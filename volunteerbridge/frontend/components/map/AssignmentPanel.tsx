@@ -5,12 +5,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { X, MapPin, Clock, AlertTriangle } from "lucide-react";
+import { X, MapPin, AlertTriangle } from "lucide-react";
 import type { CommunityNeed, MatchResult } from "@/types";
 import { matchVolunteers, assignVolunteer } from "@/lib/api";
-import { UrgencyBadge } from "@/components/ui/Badge";
-import Button from "@/components/ui/Button";
-import Spinner from "@/components/ui/Spinner";
 import VolunteerCard from "./VolunteerCard";
 
 interface AssignmentPanelProps {
@@ -71,101 +68,127 @@ export default function AssignmentPanel({
     }
   };
 
+  const getUrgencyPill = (score: number) => {
+    if (score >= 8) return <span style={{ padding: '2px 8px', borderRadius: '999px', fontSize: '10px', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em', backgroundColor: '#FEE2E2', color: '#E24B4A' }}>CRITICAL</span>;
+    if (score >= 5) return <span style={{ padding: '2px 8px', borderRadius: '999px', fontSize: '10px', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em', backgroundColor: '#FEF3C7', color: '#EF9F27' }}>MODERATE</span>;
+    return <span style={{ padding: '2px 8px', borderRadius: '999px', fontSize: '10px', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em', backgroundColor: '#DCFCE7', color: '#1D9E75' }}>LOW</span>;
+  };
+
   return (
-    <div className="fixed right-0 top-0 h-full w-full max-w-md bg-white shadow-2xl border-l border-gray-200 z-50 animate-slide-in-right overflow-y-auto">
+    <div 
+      className="fixed right-0 flex flex-col z-50 animate-slide-in-right"
+      style={{
+        top: '64px',
+        height: 'calc(100vh - 64px)',
+        width: '360px',
+        backgroundColor: 'white',
+        boxShadow: '-4px 0 15px -3px rgba(0,0,0,0.1)',
+        borderLeft: '1px solid #E2E8F0'
+      }}
+    >
       {/* Header */}
-      <div className="sticky top-0 bg-white border-b border-gray-100 px-5 py-4 flex items-start justify-between z-10">
+      <div 
+        className="shrink-0 flex items-start justify-between z-10"
+        style={{
+          backgroundColor: 'white',
+          borderBottom: '1px solid #E2E8F0',
+          padding: '16px 20px',
+        }}
+      >
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <UrgencyBadge score={need.urgency_score} />
-            <span className="text-xs text-gray-500">
-              Score: {need.urgency_score}/10
-            </span>
+          <div style={{ marginBottom: '8px' }}>
+            {getUrgencyPill(need.urgency_score)}
           </div>
-          <h2 className="text-lg font-bold text-gray-900">{need.need_type}</h2>
+          <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#1A202C', marginBottom: '4px', lineHeight: 1.2 }}>{need.need_type}</h2>
+          <div className="flex items-center gap-1.5" style={{ fontSize: '12px', color: '#64748B' }}>
+             <MapPin size={12} />
+             <span>{need.location.zone}</span>
+          </div>
         </div>
         <button
           onClick={onClose}
-          className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+          className="rounded cursor-pointer"
+          style={{ padding: '4px', color: '#94A3B8', border: 'none', background: 'none' }}
+          onMouseEnter={(e) => { e.currentTarget.style.color = '#1A202C'; e.currentTarget.style.backgroundColor = '#F8FAFC'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.color = '#94A3B8'; e.currentTarget.style.backgroundColor = 'transparent'; }}
           aria-label="Close panel"
         >
-          <X size={20} />
+          <X size={20} strokeWidth={2.5} />
         </button>
       </div>
 
-      {/* Need details */}
-      <div className="px-5 py-4 border-b border-gray-100">
-        <div className="grid grid-cols-2 gap-3">
-          <div className="flex items-center gap-2">
-            <MapPin size={16} className="text-gray-400" />
-            <div>
-              <p className="text-xs text-gray-500">Zone</p>
-              <p className="text-sm font-medium text-gray-900">
-                {need.location.zone}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Clock size={16} className="text-gray-400" />
-            <div>
-              <p className="text-xs text-gray-500">Hours Needed</p>
-              <p className="text-sm font-medium text-gray-900">
-                {need.volunteer_hours_needed}h
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-3">
-          <p className="text-xs text-gray-500 mb-1.5">Required Skills</p>
-          <div className="flex flex-wrap gap-1.5">
-            {need.required_skills.map((skill) => (
-              <span
-                key={skill}
-                className="px-2.5 py-1 bg-accent-teal/10 text-accent-teal text-xs font-medium rounded-full"
-              >
-                {skill}
-              </span>
-            ))}
-          </div>
-        </div>
+      {/* Tabs */}
+      <div 
+        className="shrink-0 flex"
+        style={{ borderBottom: '1px solid #E2E8F0', padding: '0 20px' }}
+      >
+         <button 
+           style={{ padding: '12px 8px', fontSize: '13px', fontWeight: 600, color: '#185FA5', borderBottom: '2px solid #185FA5', background: 'none', borderTop: 'none', borderLeft: 'none', borderRight: 'none', marginRight: '16px' }}
+         >
+            Top Matches
+         </button>
+         <button 
+           style={{ padding: '12px 8px', fontSize: '13px', fontWeight: 600, color: '#94A3B8', borderBottom: '2px solid transparent', background: 'none', borderTop: 'none', borderLeft: 'none', borderRight: 'none' }}
+         >
+            All Volunteers
+         </button>
       </div>
 
-      {/* Matched volunteers */}
-      <div className="px-5 py-4">
-        <h3 className="text-sm font-semibold text-gray-900 mb-3">
-          Top Matched Volunteers
-        </h3>
-
+      {/* Scrollable Content */}
+      <div 
+        className="flex-1 overflow-y-auto"
+        style={{ backgroundColor: '#F8FAFC', padding: '16px' }}
+      >
         {loading && (
-          <div className="py-12">
-            <Spinner size="md" label="Finding best matches..." />
+          <div className="space-y-3">
+             {[1, 2, 3].map(i => (
+                <div 
+                  key={i} 
+                  className="animate-pulse"
+                  style={{ backgroundColor: 'white', border: '1px solid #E2E8F0', borderRadius: '8px', padding: '16px', height: '180px' }}
+                >
+                   <div className="flex gap-3" style={{ marginBottom: '16px' }}>
+                      <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: '#E2E8F0' }} />
+                      <div>
+                         <div style={{ width: '96px', height: '16px', backgroundColor: '#E2E8F0', borderRadius: '4px', marginBottom: '8px' }} />
+                         <div style={{ width: '64px', height: '12px', backgroundColor: '#E2E8F0', borderRadius: '4px' }} />
+                      </div>
+                   </div>
+                   <div style={{ width: '100%', height: '64px', backgroundColor: '#E2E8F0', borderRadius: '4px' }} />
+                </div>
+             ))}
           </div>
         )}
 
         {error && (
-          <div className="py-8 text-center">
-            <AlertTriangle size={32} className="text-urgency-moderate mx-auto mb-2" />
-            <p className="text-sm text-gray-600">{error}</p>
-            <Button
-              variant="secondary"
-              size="sm"
-              className="mt-3"
-              onClick={() => window.location.reload()}
+          <div 
+            className="text-center"
+            style={{ padding: '24px', backgroundColor: 'white', border: '1px solid #E2E8F0', borderRadius: '8px' }}
+          >
+            <AlertTriangle size={32} color="#EF9F27" style={{ margin: '0 auto 12px auto' }} />
+            <p style={{ fontSize: '13px', fontWeight: 500, color: '#1A202C', marginBottom: '4px' }}>Failed to Load Matches</p>
+            <p style={{ fontSize: '13px', color: '#64748B', marginBottom: '16px' }}>{error}</p>
+            <button
+               onClick={() => window.location.reload()}
+               style={{ padding: '8px 16px', border: '1px solid #E2E8F0', borderRadius: '4px', fontSize: '13px', fontWeight: 500, backgroundColor: 'white', cursor: 'pointer' }}
             >
-              Retry
-            </Button>
+               Retry
+            </button>
           </div>
         )}
 
         {!loading && !error && matches.length === 0 && (
-          <div className="py-8 text-center">
-            <p className="text-sm text-gray-500">No available volunteers found.</p>
+          <div 
+            className="text-center"
+            style={{ padding: '48px 24px', backgroundColor: 'white', border: '1px solid #E2E8F0', borderRadius: '8px' }}
+          >
+            <p style={{ fontSize: '14px', fontWeight: 500, color: '#1A202C', marginBottom: '4px' }}>No Matches Found</p>
+            <p style={{ fontSize: '13px', color: '#64748B' }}>No available volunteers meet the criteria.</p>
           </div>
         )}
 
         {!loading && !error && matches.length > 0 && (
-          <div className="space-y-3">
+          <div className="flex flex-col" style={{ gap: '12px', paddingBottom: '16px' }}>
             {matches.map((match, index) => (
               <VolunteerCard
                 key={match.volunteer.id || index}
@@ -179,6 +202,32 @@ export default function AssignmentPanel({
             ))}
           </div>
         )}
+      </div>
+
+      {/* Sticky Footer */}
+      <div 
+        className="shrink-0"
+        style={{ padding: '16px', backgroundColor: 'white', borderTop: '1px solid #E2E8F0', boxShadow: '0 -4px 6px -1px rgba(0,0,0,0.05)' }}
+      >
+         <button 
+           disabled={matches.length === 0 || assigning !== null}
+           onClick={() => matches[0]?.volunteer?.id && handleAssign(matches[0].volunteer.id)}
+           className="w-full flex justify-center items-center cursor-pointer"
+           style={{
+            backgroundColor: matches.length === 0 || assigning !== null ? '#94A3B8' : '#185FA5',
+            color: 'white',
+            fontWeight: 700,
+            fontSize: '14px',
+            padding: '12px',
+            borderRadius: '8px',
+            border: 'none',
+            transition: 'background-color 0.2s'
+           }}
+           onMouseEnter={(e) => { if (!(matches.length === 0 || assigning !== null)) e.currentTarget.style.backgroundColor = '#0F3D6B'; }}
+           onMouseLeave={(e) => { if (!(matches.length === 0 || assigning !== null)) e.currentTarget.style.backgroundColor = '#185FA5'; }}
+         >
+           Auto-assign Top Match
+         </button>
       </div>
     </div>
   );

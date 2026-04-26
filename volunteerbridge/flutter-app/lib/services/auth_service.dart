@@ -18,7 +18,11 @@ final authStateProvider = StreamProvider<User?>((ref) {
 /// Authentication service wrapping Firebase Auth.
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final GoogleSignIn _googleSignIn = GoogleSignIn();
+  
+  // Client ID moved INSIDE the class, no duplicate global variable
+  final GoogleSignIn _googleSignIn = GoogleSignIn(
+    clientId: '540870892709-bjojbn4lv62f0tk55jtfeoaleqlng5dm.apps.googleusercontent.com',
+  );
 
   /// Stream of auth state changes.
   Stream<User?> get currentUser => _auth.authStateChanges();
@@ -30,15 +34,10 @@ class AuthService {
   User? get user => _auth.currentUser;
 
   /// Sign in with Google OAuth.
-  ///
-  /// Returns the [UserCredential] on success, null if the user cancelled.
   Future<UserCredential?> signInWithGoogle() async {
     try {
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-      if (googleUser == null) {
-        // User cancelled the sign-in flow
-        return null;
-      }
+      if (googleUser == null) return null;
 
       final GoogleSignInAuthentication googleAuth =
           await googleUser.authentication;
@@ -48,10 +47,7 @@ class AuthService {
         idToken: googleAuth.idToken,
       );
 
-      final UserCredential userCredential =
-          await _auth.signInWithCredential(credential);
-
-      return userCredential;
+      return await _auth.signInWithCredential(credential);
     } on FirebaseAuthException catch (e) {
       throw Exception('Authentication failed: ${e.message}');
     } catch (e) {
@@ -61,7 +57,7 @@ class AuthService {
 
   /// Sign out the current user.
   Future<void> signOut() async {
-    await Future.wait([
+    await Future.wait<void>([
       _auth.signOut(),
       _googleSignIn.signOut(),
     ]);

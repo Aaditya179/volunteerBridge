@@ -6,8 +6,7 @@
 
 import type { MatchResult } from "@/types";
 import MatchScoreBar from "./MatchScoreBar";
-import Button from "@/components/ui/Button";
-import { MapPin, Clock, CheckCircle } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 interface VolunteerCardProps {
   match: MatchResult;
@@ -30,92 +29,118 @@ export default function VolunteerCard({
     .toUpperCase()
     .slice(0, 2);
 
-  const rankColors: Record<number, string> = {
-    1: "bg-yellow-400 text-yellow-900",
-    2: "bg-gray-300 text-gray-700",
-    3: "bg-amber-600 text-white",
+  const completionRate = Math.round(volunteer.completion_rate * 100);
+
+  const getReliabilityBadge = (rate: number) => {
+    if (rate > 90) return <span style={{ padding: '2px 8px', borderRadius: '999px', fontSize: '10px', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', backgroundColor: '#ECFDF5', color: '#10B981', border: '1px solid #D1FAE5' }}>{rate}% Reliable</span>;
+    if (rate >= 70) return <span style={{ padding: '2px 8px', borderRadius: '999px', fontSize: '10px', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', backgroundColor: '#FFFBEB', color: '#F59E0B', border: '1px solid #FEF3C7' }}>{rate}% Reliable</span>;
+    return <span style={{ padding: '2px 8px', borderRadius: '999px', fontSize: '10px', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', backgroundColor: '#FEF2F2', color: '#EF4444', border: '1px solid #FEE2E2' }}>{rate}% Reliable</span>;
   };
 
   return (
-    <div className="border border-gray-200 rounded-xl p-4 hover:border-brand-300 transition-colors animate-slide-up">
-      {/* Header */}
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <div className="w-10 h-10 rounded-full bg-brand-100 flex items-center justify-center text-brand-600 font-semibold text-sm">
-              {initials}
-            </div>
-            <span
-              className={`absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${rankColors[rank] || "bg-gray-200 text-gray-600"}`}
-            >
-              {rank}
-            </span>
+    <div 
+      style={{
+        backgroundColor: 'white',
+        border: '1px solid #E2E8F0',
+        borderRadius: '8px',
+        padding: '16px',
+        boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+      }}
+    >
+      {/* Top row */}
+      <div className="flex flex-row items-center justify-between" style={{ marginBottom: '12px' }}>
+        <div className="flex flex-row items-center" style={{ gap: '12px' }}>
+          <div 
+            className="flex items-center justify-center font-bold"
+            style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: '#F1F5F9', color: '#64748B', fontSize: '14px', flexShrink: 0 }}
+          >
+            {initials}
           </div>
-          <div>
-            <p className="text-sm font-semibold text-gray-900">
-              {volunteer.name}
-            </p>
-            <div className="flex items-center gap-2 text-xs text-gray-500 mt-0.5">
-              <span className="flex items-center gap-0.5">
-                <CheckCircle size={12} />
-                {Math.round(volunteer.completion_rate * 100)}%
-              </span>
-              <span className="flex items-center gap-0.5">
-                <Clock size={12} />
-                {volunteer.avg_response_minutes}min
-              </span>
+          <div className="flex flex-col">
+            <div className="flex flex-row items-center" style={{ gap: '8px', marginBottom: '4px' }}>
+               <p style={{ fontSize: '14px', fontWeight: 600, color: '#1A202C', margin: 0, lineHeight: 1 }}>
+                 {volunteer.name}
+               </p>
+               {rank === 1 && (
+                  <span style={{ backgroundColor: '#FEF3C7', color: '#92400E', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 700 }}>
+                    #1 MATCH
+                  </span>
+               )}
+            </div>
+            <div>
+               {getReliabilityBadge(completionRate)}
             </div>
           </div>
         </div>
-
-        {/* Final score */}
-        <div className="text-right">
-          <p className="text-2xl font-bold text-brand-500">
-            {Math.round(match.final_score * 100)}
-          </p>
-          <p className="text-[10px] text-gray-400 uppercase tracking-wider">
-            Score
-          </p>
+        <div className="flex flex-col items-end">
+           <span style={{ fontSize: '18px', fontWeight: 700, color: '#185FA5', lineHeight: 1 }}>
+             {Math.round(match.final_score * 100)}%
+           </span>
+           <span style={{ fontSize: '10px', color: '#94A3B8', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em', marginTop: '2px' }}>
+             Match
+           </span>
         </div>
       </div>
 
       {/* Skills */}
-      <div className="flex flex-wrap gap-1 mb-3">
+      <div className="flex flex-wrap" style={{ gap: '6px', marginBottom: '12px' }}>
         {volunteer.skills.map((skill) => (
           <span
             key={skill}
-            className="px-2 py-0.5 bg-accent-teal/10 text-accent-teal text-[11px] font-medium rounded-full"
+            style={{ padding: '2px 8px', backgroundColor: '#ECFDF5', color: '#1D9E75', border: '1px solid #D1FAE5', fontSize: '11px', fontWeight: 700, borderRadius: '4px' }}
           >
             {skill}
           </span>
         ))}
       </div>
 
-      {/* Travel info */}
-      {match.travel_minutes !== null && (
-        <div className="flex items-center gap-1.5 text-xs text-gray-500 mb-3">
-          <MapPin size={12} />
-          <span>~{match.travel_minutes} min travel</span>
-        </div>
-      )}
-
       {/* Score breakdown */}
-      <MatchScoreBar
-        skillScore={match.skill_score}
-        proximityScore={match.proximity_score}
-        reliabilityScore={match.reliability_score}
-      />
+      <div style={{ marginBottom: '12px' }}>
+         <MatchScoreBar
+           skillScore={match.skill_score}
+           proximityScore={match.proximity_score}
+           reliabilityScore={match.reliability_score}
+         />
+      </div>
 
-      {/* Assign button */}
-      <Button
-        variant="primary"
-        size="sm"
-        className="w-full mt-3"
-        loading={assigning}
-        onClick={onAssign}
+      {/* Bottom row */}
+      <div 
+        className="flex flex-row items-center justify-between"
+        style={{ paddingTop: '12px', borderTop: '1px solid #E2E8F0' }}
       >
-        Assign Volunteer
-      </Button>
+         <div className="flex flex-row items-center" style={{ gap: '12px' }}>
+            {match.travel_minutes !== null && (
+               <span style={{ fontSize: '12px', color: '#64748B', fontWeight: 500 }}>
+                 ~{match.travel_minutes} min travel
+               </span>
+            )}
+            <div style={{ width: '4px', height: '4px', borderRadius: '50%', backgroundColor: '#E2E8F0' }} />
+            <span style={{ fontSize: '12px', color: '#64748B', fontWeight: 500 }}>
+               {volunteer.avg_response_minutes} min avg resp
+            </span>
+         </div>
+         <button
+           onClick={onAssign}
+           disabled={assigning}
+           className="flex flex-row items-center justify-center cursor-pointer"
+           style={{
+             padding: '4px 12px',
+             backgroundColor: assigning ? '#CBD5E1' : 'transparent',
+             color: assigning ? 'white' : '#185FA5',
+             border: `1px solid ${assigning ? 'transparent' : '#185FA5'}`,
+             borderRadius: '4px',
+             fontSize: '12px',
+             fontWeight: 600,
+             transition: 'all 0.2s',
+             gap: '6px'
+           }}
+           onMouseEnter={(e) => { if (!assigning) { e.currentTarget.style.backgroundColor = '#EFF6FF'; } }}
+           onMouseLeave={(e) => { if (!assigning) { e.currentTarget.style.backgroundColor = 'transparent'; } }}
+         >
+           {assigning ? <Loader2 size={12} className="animate-spin" /> : null}
+           {assigning ? 'Assigning' : 'Assign'}
+         </button>
+      </div>
     </div>
   );
 }

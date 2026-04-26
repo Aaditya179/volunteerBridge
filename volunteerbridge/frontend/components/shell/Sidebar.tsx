@@ -1,20 +1,13 @@
-/**
- * Sidebar navigation component.
- * Highlights active route. Collapsible on mobile.
- */
-
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import {
   LayoutDashboard,
   Map,
   Upload,
   Brain,
-  ChevronLeft,
-  ChevronRight,
   Activity,
 } from "lucide-react";
 
@@ -28,28 +21,34 @@ const navItems: NavItem[] = [
   {
     label: "Overview",
     href: "/dashboard",
-    icon: <LayoutDashboard size={20} />,
+    icon: <LayoutDashboard size={18} />,
   },
   {
     label: "Crisis Map",
     href: "/dashboard/map",
-    icon: <Map size={20} />,
+    icon: <Map size={18} />,
   },
   {
     label: "Upload Survey",
     href: "/dashboard/upload",
-    icon: <Upload size={20} />,
+    icon: <Upload size={18} />,
   },
   {
     label: "AI Intelligence",
     href: "/dashboard/intelligence",
-    icon: <Brain size={20} />,
+    icon: <Brain size={18} />,
   },
 ];
 
-export default function Sidebar() {
+export default function Sidebar({ onLogoClick }: { onLogoClick?: () => void }) {
   const pathname = usePathname();
-  const [collapsed, setCollapsed] = useState(false);
+  const [apiConnected, setApiConnected] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    fetch("http://localhost:8000/health") // Assuming backend runs here
+      .then(res => setApiConnected(res.ok))
+      .catch(() => setApiConnected(false));
+  }, []);
 
   const isActive = (href: string): boolean => {
     if (href === "/dashboard") {
@@ -59,72 +58,132 @@ export default function Sidebar() {
   };
 
   return (
-    <aside
-      className={`
-        fixed left-0 top-0 h-full bg-white border-r border-gray-200 z-40
-        transition-all duration-300 ease-in-out flex flex-col
-        ${collapsed ? "w-[68px]" : "w-[240px]"}
-      `}
+    <aside 
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
+        height: '100%',
+        width: '240px',
+        backgroundColor: '#0F1724',
+      }}
     >
-      {/* Logo */}
-      <div className="h-16 flex items-center px-4 border-b border-gray-100">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 bg-brand-500 rounded-lg flex items-center justify-center flex-shrink-0">
-            <Activity size={18} className="text-white" />
-          </div>
-          {!collapsed && (
-            <span className="text-lg font-bold text-gray-900 whitespace-nowrap">
-              VolunteerBridge
-            </span>
-          )}
+      {/* Logo section */}
+      <div 
+        onClick={onLogoClick}
+        style={{ 
+          display: 'flex', 
+          flexDirection: 'row', 
+          alignItems: 'center', 
+          cursor: 'pointer',
+          padding: '20px 16px', 
+          gap: '10px' 
+        }}
+      >
+        <div 
+          style={{ 
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            width: '32px', height: '32px', backgroundColor: '#185FA5', borderRadius: '8px' 
+          }}
+        >
+          <Activity size={20} color="white" />
         </div>
+        <span 
+          style={{ color: 'white', fontSize: '15px', fontWeight: 600 }}
+        >
+          VolunteerBridge
+        </span>
+      </div>
+
+      {/* Divider */}
+      <div style={{ borderTop: '1px solid #1E2D3D', margin: '0 16px' }} />
+
+      {/* Nav Section Label */}
+      <div style={{ padding: '16px 16px 8px' }}>
+        <span style={{ fontSize: '11px', color: '#475569', letterSpacing: '0.08em', fontWeight: 500 }}>
+          OPERATIONS
+        </span>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 py-4 px-3 space-y-1">
-        {navItems.map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={`
-              flex items-center gap-3 px-3 py-2.5 rounded-lg
-              transition-all duration-150 group
-              ${
-                isActive(item.href)
-                  ? "bg-brand-50 text-brand-500 font-medium"
-                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-              }
-            `}
-            title={collapsed ? item.label : undefined}
-          >
-            <span
-              className={`flex-shrink-0 ${
-                isActive(item.href)
-                  ? "text-brand-500"
-                  : "text-gray-400 group-hover:text-gray-600"
-              }`}
+      <nav style={{ display: 'flex', flexDirection: 'column' }}>
+        {navItems.map((item) => {
+          const active = isActive(item.href);
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                padding: '10px 16px',
+                borderRadius: '6px',
+                margin: '2px 8px',
+                backgroundColor: active ? '#185FA5' : 'transparent',
+                color: active ? 'white' : '#CBD5E1',
+                textDecoration: 'none',
+                position: 'relative',
+              }}
+              onMouseEnter={(e) => {
+                if (!active) {
+                  e.currentTarget.style.backgroundColor = '#1E2D3D';
+                  e.currentTarget.style.color = 'white';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!active) {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                  e.currentTarget.style.color = '#CBD5E1';
+                }
+              }}
             >
-              {item.icon}
-            </span>
-            {!collapsed && (
-              <span className="text-sm whitespace-nowrap">{item.label}</span>
-            )}
-          </Link>
-        ))}
+              {active && (
+                <div 
+                  style={{
+                    position: 'absolute',
+                    left: 0,
+                    top: 0,
+                    bottom: 0,
+                    width: '3px',
+                    backgroundColor: '#1D9E75',
+                    borderRadius: '0 2px 2px 0'
+                  }} 
+                />
+              )}
+              <div style={{ flexShrink: 0 }}>
+                {item.icon}
+              </div>
+              <span style={{ fontSize: '14px', fontWeight: 500 }}>
+                {item.label}
+              </span>
+            </Link>
+          );
+        })}
       </nav>
 
-      {/* Collapse toggle */}
-      <div className="p-3 border-t border-gray-100">
-        <button
-          onClick={() => setCollapsed(!collapsed)}
-          className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg
-                     text-gray-400 hover:text-gray-600 hover:bg-gray-50
-                     transition-colors duration-150"
-          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-        >
-          {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
-          {!collapsed && <span className="text-xs">Collapse</span>}
-        </button>
+      {/* Bottom section */}
+      <div 
+        style={{
+          marginTop: 'auto',
+          padding: '16px',
+          borderTop: '1px solid #1E2D3D',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div 
+            style={{
+              width: '8px',
+              height: '8px',
+              backgroundColor: apiConnected ? '#1D9E75' : '#E24B4A',
+              borderRadius: '50%',
+              display: 'inline-block'
+            }} 
+          />
+          <span style={{ color: '#64748B', fontSize: '12px' }}>
+            {apiConnected === null ? "Checking..." : apiConnected ? "API Connected" : "API Disconnected"}
+          </span>
+        </div>
       </div>
     </aside>
   );

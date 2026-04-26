@@ -1,13 +1,12 @@
-/// Firebase configuration placeholder.
-/// Replace with output from `flutterfire configure` command.
 library;
 
 import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
 import 'package:flutter/foundation.dart'
-    show defaultTargetPlatform, TargetPlatform;
+    show defaultTargetPlatform, kIsWeb, TargetPlatform;
 
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
+    if (kIsWeb) return web;
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
         return android;
@@ -21,37 +20,38 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'REPLACE_WITH_YOUR_API_KEY',
-    appId: 'REPLACE_WITH_YOUR_APP_ID',
-    messagingSenderId: 'REPLACE_WITH_YOUR_MESSAGING_SENDER_ID',
-    projectId: 'REPLACE_WITH_YOUR_PROJECT_ID',
-    authDomain: 'REPLACE_WITH_YOUR_AUTH_DOMAIN',
-    storageBucket: 'REPLACE_WITH_YOUR_STORAGE_BUCKET',
+    apiKey: 'AIzaSyA_LXj9Q123tOCZvsd_dgWAXqOfbMZpyCo',
+    appId: '1:540870892709:web:e34d39fe98e59c1e24414c',
+    messagingSenderId: '540870892709',
+    projectId: 'volunteerbridge-52687',
+    authDomain: 'volunteerbridge-52687.firebaseapp.com',
+    storageBucket: 'volunteerbridge-52687.firebasestorage.app',
+    measurementId: 'G-LQ1SPXPCKP',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'REPLACE_WITH_YOUR_ANDROID_API_KEY',
-    appId: 'REPLACE_WITH_YOUR_ANDROID_APP_ID',
-    messagingSenderId: 'REPLACE_WITH_YOUR_MESSAGING_SENDER_ID',
-    projectId: 'REPLACE_WITH_YOUR_PROJECT_ID',
-    storageBucket: 'REPLACE_WITH_YOUR_STORAGE_BUCKET',
+    apiKey: 'AIzaSyA_LXj9Q123tOCZvsd_dgWAXqOfbMZpyCo',
+    appId: '1:540870892709:android:e57840881003620524414c',
+    messagingSenderId: '540870892709',
+    projectId: 'volunteerbridge-52687',
+    storageBucket: 'volunteerbridge-52687.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'REPLACE_WITH_YOUR_IOS_API_KEY',
-    appId: 'REPLACE_WITH_YOUR_IOS_APP_ID',
-    messagingSenderId: 'REPLACE_WITH_YOUR_MESSAGING_SENDER_ID',
-    projectId: 'REPLACE_WITH_YOUR_PROJECT_ID',
-    storageBucket: 'REPLACE_WITH_YOUR_STORAGE_BUCKET',
+    apiKey: 'AIzaSyA_LXj9Q123tOCZvsd_dgWAXqOfbMZpyCo',
+    appId: '1:540870892709:ios:75d12c73497cdb1924414c',
+    messagingSenderId: '540870892709',
+    projectId: 'volunteerbridge-52687',
+    storageBucket: 'volunteerbridge-52687.firebasestorage.app',
     iosBundleId: 'com.volunteerbridge.app',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'REPLACE_WITH_YOUR_MACOS_API_KEY',
-    appId: 'REPLACE_WITH_YOUR_MACOS_APP_ID',
-    messagingSenderId: 'REPLACE_WITH_YOUR_MESSAGING_SENDER_ID',
-    projectId: 'REPLACE_WITH_YOUR_PROJECT_ID',
-    storageBucket: 'REPLACE_WITH_YOUR_STORAGE_BUCKET',
+    apiKey: 'AIzaSyA_LXj9Q123tOCZvsd_dgWAXqOfbMZpyCo',
+    appId: '1:540870892709:ios:75d12c73497cdb1924414c',
+    messagingSenderId: '540870892709',
+    projectId: 'volunteerbridge-52687',
+    storageBucket: 'volunteerbridge-52687.firebasestorage.app',
     iosBundleId: 'com.volunteerbridge.app',
   );
 }

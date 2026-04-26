@@ -8,23 +8,22 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { Loader } from "@googlemaps/js-api-loader";
 import { MarkerClusterer } from "@googlemaps/markerclusterer";
 import type { CommunityNeed } from "@/types";
-import Spinner from "@/components/ui/Spinner";
 
 interface CrisisMapProps {
   needs: CommunityNeed[];
   onMarkerClick?: (need: CommunityNeed) => void;
-  className?: string;
 }
 
 function getMarkerColor(urgencyScore: number): string {
   if (urgencyScore >= 8) return "#E24B4A";
   if (urgencyScore >= 5) return "#EF9F27";
-  return "#639922";
+  return "#1D9E75";
 }
 
-function createMarkerElement(urgencyScore: number): HTMLDivElement {
+function createMarkerElement(urgencyScore: number, status: string): HTMLDivElement {
   const el = document.createElement("div");
   const color = getMarkerColor(urgencyScore);
+  const opacity = status === "unassigned" ? 1 : 0.6;
   el.style.cssText = `
     width: 28px;
     height: 28px;
@@ -40,6 +39,7 @@ function createMarkerElement(urgencyScore: number): HTMLDivElement {
     font-size: 11px;
     font-weight: 700;
     color: white;
+    opacity: ${opacity};
   `;
   el.textContent = String(urgencyScore);
   el.addEventListener("mouseenter", () => {
@@ -54,7 +54,6 @@ function createMarkerElement(urgencyScore: number): HTMLDivElement {
 export default function CrisisMap({
   needs,
   onMarkerClick,
-  className = "",
 }: CrisisMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<google.maps.Map | null>(null);
@@ -116,7 +115,6 @@ export default function CrisisMap({
     const map = mapInstanceRef.current;
     if (!map) return;
 
-    // Clear existing markers
     markersRef.current.forEach((marker) => {
       marker.map = null;
     });
@@ -131,7 +129,7 @@ export default function CrisisMap({
     needs.forEach((need) => {
       if (!need.location?.lat || !need.location?.lng) return;
 
-      const markerElement = createMarkerElement(need.urgency_score);
+      const markerElement = createMarkerElement(need.urgency_score, need.status);
 
       const marker = new google.maps.marker.AdvancedMarkerElement({
         map,
@@ -156,7 +154,6 @@ export default function CrisisMap({
       });
     }
 
-    // Fit bounds to markers
     if (newMarkers.length > 0) {
       const bounds = new google.maps.LatLngBounds();
       needs.forEach((need) => {
@@ -170,42 +167,55 @@ export default function CrisisMap({
 
   if (error) {
     return (
-      <div className={`flex items-center justify-center bg-gray-50 rounded-xl border border-gray-200 ${className}`}>
-        <div className="text-center p-8">
-          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <span className="text-2xl">🗺️</span>
-          </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Map Unavailable</h3>
-          <p className="text-sm text-gray-500 max-w-xs">{error}</p>
-        </div>
+      <div 
+        className="flex items-center justify-center"
+        style={{ width: '100%', height: '100%', backgroundColor: '#F8FAFC' }}
+      >
+        <p style={{ color: '#1A202C', fontSize: '14px', fontWeight: 600 }}>{error}</p>
       </div>
     );
   }
 
   return (
-    <div className={`relative rounded-xl overflow-hidden ${className}`}>
+    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
       {loading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-50 z-10">
-          <Spinner size="lg" label="Loading map..." />
+        <div 
+          className="flex items-center justify-center"
+          style={{ position: 'absolute', inset: 0, backgroundColor: '#F8FAFC', zIndex: 10 }}
+        >
+          <div className="animate-spin" style={{ width: '24px', height: '24px', borderRadius: '50%', border: '2px solid #E2E8F0', borderTopColor: '#185FA5' }} />
+          <span style={{ marginLeft: '12px', color: '#1A202C', fontSize: '14px', fontWeight: 500 }}>Loading map...</span>
         </div>
       )}
-      <div ref={mapRef} className="w-full h-full min-h-[400px]" />
+      <div ref={mapRef} style={{ width: '100%', height: '100%' }} />
 
       {/* Legend */}
-      <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur-sm rounded-lg shadow-md p-3 z-10">
-        <p className="text-xs font-semibold text-gray-700 mb-2">Urgency</p>
-        <div className="flex flex-col gap-1.5">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-[#E24B4A]" />
-            <span className="text-xs text-gray-600">Critical (8-10)</span>
+      <div 
+        style={{
+          position: 'absolute',
+          bottom: '16px',
+          left: '16px',
+          backgroundColor: 'rgba(255, 255, 255, 0.9)',
+          backdropFilter: 'blur(4px)',
+          borderRadius: '8px',
+          padding: '12px',
+          zIndex: 10,
+          boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+        }}
+      >
+        <p style={{ fontSize: '12px', fontWeight: 600, color: '#1A202C', marginBottom: '8px' }}>Urgency</p>
+        <div className="flex flex-col" style={{ gap: '6px' }}>
+          <div className="flex flex-row items-center" style={{ gap: '8px' }}>
+            <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#E24B4A' }} />
+            <span style={{ fontSize: '12px', color: '#64748B' }}>Critical (8-10)</span>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-[#EF9F27]" />
-            <span className="text-xs text-gray-600">Moderate (5-7)</span>
+          <div className="flex flex-row items-center" style={{ gap: '8px' }}>
+            <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#EF9F27' }} />
+            <span style={{ fontSize: '12px', color: '#64748B' }}>Moderate (5-7)</span>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-[#639922]" />
-            <span className="text-xs text-gray-600">Low (1-4)</span>
+          <div className="flex flex-row items-center" style={{ gap: '8px' }}>
+            <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#1D9E75' }} />
+            <span style={{ fontSize: '12px', color: '#64748B' }}>Low (1-4)</span>
           </div>
         </div>
       </div>

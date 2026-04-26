@@ -4,178 +4,222 @@
 
 "use client";
 
+import { useState, useEffect } from "react";
 import type { CrisisReport as CrisisReportType } from "@/types";
-import Card from "@/components/ui/Card";
-import Button from "@/components/ui/Button";
-import Spinner from "@/components/ui/Spinner";
 import {
   AlertTriangle,
   MapPin,
-  TrendingUp,
   RefreshCw,
-  Target,
-  Shield,
+  Brain,
 } from "lucide-react";
 
-interface CrisisReportProps {
-  report: CrisisReportType | null;
-  loading?: boolean;
-  error?: string | null;
-  onRefresh?: () => void;
-}
+export default function CrisisReportCard() {
+  const [report, setReport] = useState<CrisisReportType | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-export default function CrisisReportCard({
-  report,
-  loading = false,
-  error = null,
-  onRefresh,
-}: CrisisReportProps) {
-  if (loading) {
+  const fetchReport = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch("http://localhost:8000/crisis-report/default");
+      if (res.ok) {
+        const data = await res.json();
+        setReport(data);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+      setIsRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchReport();
+  }, []);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await fetchReport();
+  };
+
+  if (loading && !report) {
     return (
-      <Card className="min-h-[320px] flex items-center justify-center">
-        <Spinner size="lg" label="Generating crisis report..." />
-      </Card>
+      <div 
+        className="animate-pulse flex flex-col items-center justify-center p-8"
+      >
+        <div style={{ width: '48px', height: '48px', backgroundColor: '#E2E8F0', borderRadius: '50%', marginBottom: '16px' }} />
+        <div style={{ height: '16px', width: '192px', backgroundColor: '#E2E8F0', borderRadius: '4px', marginBottom: '8px' }} />
+        <div style={{ height: '12px', width: '128px', backgroundColor: '#E2E8F0', borderRadius: '4px' }} />
+      </div>
     );
   }
 
-  if (error) {
+  if (!report || (report.total_needs && report.total_needs < 3)) {
     return (
-      <Card className="min-h-[320px] flex flex-col items-center justify-center text-center">
-        <AlertTriangle size={40} className="text-urgency-moderate mb-3" />
-        <h3 className="text-lg font-semibold text-gray-900 mb-1">
-          Report Unavailable
-        </h3>
-        <p className="text-sm text-gray-500 max-w-xs mb-4">{error}</p>
-        {onRefresh && (
-          <Button variant="secondary" size="sm" onClick={onRefresh}>
-            <RefreshCw size={14} className="mr-1.5" />
-            Retry
-          </Button>
-        )}
-      </Card>
-    );
-  }
-
-  if (!report) {
-    return (
-      <Card className="min-h-[320px] flex flex-col items-center justify-center text-center">
-        <Shield size={40} className="text-gray-300 mb-3" />
-        <h3 className="text-lg font-medium text-gray-600">
-          No Report Available
-        </h3>
-        <p className="text-sm text-gray-400 mt-1 max-w-xs">
-          At least 3 active needs are required to generate a crisis report.
+      <div 
+        className="flex flex-col items-center justify-center"
+        style={{ padding: '32px', gap: '12px' }}
+      >
+        <Brain size={48} color="#94A3B8" />
+        <p style={{ color: '#94A3B8', fontSize: '14px', textAlign: 'center' }}>
+          Upload 3+ surveys to generate report
         </p>
-      </Card>
+      </div>
     );
   }
 
   const generatedDate = new Date(report.generated_at);
-  const formattedTime = generatedDate.toLocaleTimeString("en-IN", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-  const formattedDate = generatedDate.toLocaleDateString("en-IN", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
+  const now = new Date();
+  const diffMinutes = Math.floor((now.getTime() - generatedDate.getTime()) / 60000);
 
   return (
-    <Card>
-      {/* Header */}
-      <div className="flex items-start justify-between mb-5">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <div className="w-2 h-2 rounded-full bg-urgency-critical animate-pulse" />
-            <h3 className="text-sm font-semibold text-urgency-critical uppercase tracking-wider">
-              Operations Briefing
-            </h3>
-          </div>
-          <p className="text-xs text-gray-400">
-            Generated {formattedDate} at {formattedTime}
-          </p>
-        </div>
-        {onRefresh && (
-          <Button variant="ghost" size="sm" onClick={onRefresh}>
-            <RefreshCw size={14} />
-          </Button>
-        )}
-      </div>
-
+    <div className="flex flex-col">
       {/* Zone */}
-      <div className="flex items-center gap-2 mb-4 px-4 py-3 bg-brand-50 rounded-lg">
-        <MapPin size={18} className="text-brand-500" />
-        <div>
-          <p className="text-xs text-brand-400">Most Affected Zone</p>
-          <p className="text-lg font-bold text-brand-600">{report.zone}</p>
-        </div>
+      <div 
+        className="flex flex-row items-center"
+        style={{ gap: '8px', marginBottom: '16px' }}
+      >
+        <MapPin size={16} color="#185FA5" />
+        <p style={{ fontSize: '18px', fontWeight: 600, color: '#1A202C', margin: 0 }}>
+          {report.zone}
+        </p>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 gap-3 mb-5">
-        <div className="bg-gray-50 rounded-lg p-3 text-center">
-          <p className="text-2xl font-bold text-gray-900">
-            {report.total_needs}
-          </p>
-          <p className="text-xs text-gray-500">Total Needs</p>
+      {/* Stats Pills */}
+      <div 
+        className="flex flex-row"
+        style={{ gap: '8px', marginBottom: '16px' }}
+      >
+        <div 
+          style={{
+            backgroundColor: '#DBEAFE',
+            color: '#185FA5',
+            padding: '4px 12px',
+            borderRadius: '999px',
+            fontSize: '13px',
+            fontWeight: 500
+          }}
+        >
+          {report.total_needs} Total
         </div>
-        <div className="bg-red-50 rounded-lg p-3 text-center">
-          <p className="text-2xl font-bold text-urgency-critical">
-            {report.critical_needs}
-          </p>
-          <p className="text-xs text-gray-500">Critical Needs</p>
+        <div 
+          style={{
+            backgroundColor: '#FEE2E2',
+            color: '#E24B4A',
+            padding: '4px 12px',
+            borderRadius: '999px',
+            fontSize: '13px',
+            fontWeight: 500
+          }}
+        >
+          {report.critical_needs} Critical
         </div>
       </div>
 
       {/* Skill gaps */}
-      {report.skill_gaps.length > 0 && (
-        <div className="mb-5">
-          <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">
-            Skill Gaps
-          </p>
-          <div className="flex flex-wrap gap-1.5">
-            {report.skill_gaps.map((gap) => (
-              <span
-                key={gap}
-                className="px-2.5 py-1 bg-red-100 text-urgency-critical text-xs font-medium rounded-full"
-              >
-                {gap}
-              </span>
-            ))}
-          </div>
+      <div style={{ marginBottom: '6px' }}>
+        <p style={{ fontSize: '12px', fontWeight: 500, color: '#64748B', textTransform: 'uppercase', marginBottom: '8px' }}>
+          Skill Gaps
+        </p>
+        <div className="flex flex-wrap" style={{ gap: '6px' }}>
+          {report.skill_gaps.map((gap) => (
+            <span
+              key={gap}
+              style={{
+                backgroundColor: '#FEE2E2',
+                color: '#E24B4A',
+                fontSize: '12px',
+                padding: '3px 10px',
+                borderRadius: '999px'
+              }}
+            >
+              {gap}
+            </span>
+          ))}
         </div>
-      )}
+      </div>
 
       {/* Recommended actions */}
-      <div className="mb-5">
-        <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">
+      <div style={{ marginBottom: '6px' }}>
+        <p style={{ fontSize: '12px', fontWeight: 500, color: '#64748B', textTransform: 'uppercase', marginBottom: '8px' }}>
           Recommended Actions
         </p>
-        <ol className="space-y-2">
+        <div className="flex flex-col">
           {report.recommended_actions.map((action, i) => (
-            <li key={i} className="flex items-start gap-2">
-              <span className="w-5 h-5 rounded-full bg-brand-100 text-brand-600 text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5">
+            <div 
+              key={i} 
+              className="flex flex-row items-start"
+              style={{ gap: '8px', marginBottom: '8px' }}
+            >
+              <div 
+                className="flex items-center justify-center flex-shrink-0"
+                style={{ 
+                  width: '20px', height: '20px', 
+                  backgroundColor: '#185FA5', color: 'white', 
+                  fontSize: '11px', borderRadius: '50%' 
+                }}
+              >
                 {i + 1}
-              </span>
-              <p className="text-sm text-gray-700">{action}</p>
-            </li>
+              </div>
+              <p style={{ fontSize: '13px', color: '#1A202C', lineHeight: 1.5, margin: 0 }}>
+                {action}
+              </p>
+            </div>
           ))}
-        </ol>
+        </div>
       </div>
 
       {/* Escalation prediction */}
-      <div className="px-4 py-3 bg-amber-50 border border-amber-200 rounded-lg">
-        <div className="flex items-center gap-2 mb-1">
-          <TrendingUp size={14} className="text-amber-600" />
-          <p className="text-xs font-semibold text-amber-700 uppercase tracking-wider">
-            Predicted Escalation
-          </p>
+      <div 
+        style={{
+          backgroundColor: '#FFFBEB',
+          border: '1px solid #FEF3C7',
+          borderRadius: '8px',
+          padding: '12px',
+          marginTop: '12px'
+        }}
+      >
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', marginBottom: '4px' }}>
+           <AlertTriangle size={14} color="#EF9F27" />
+           <span style={{ fontSize: '13px', fontWeight: 600, color: '#EF9F27' }}>Predicted Escalation</span>
         </div>
-        <p className="text-sm text-amber-800 italic">
+        <p style={{ fontSize: '13px', color: '#92400E', fontStyle: 'italic', margin: 0 }}>
           {report.predicted_escalation}
         </p>
       </div>
-    </Card>
+
+      {/* Footer */}
+      <div 
+        className="flex flex-row justify-between items-center"
+        style={{
+          marginTop: '16px',
+          paddingTop: '12px',
+          borderTop: '1px solid #E2E8F0'
+        }}
+      >
+        <p style={{ fontSize: '12px', color: '#94A3B8', margin: 0 }}>
+          Generated {diffMinutes === 0 ? "just now" : `${diffMinutes} mins ago`}
+        </p>
+        <button
+          onClick={handleRefresh}
+          className="flex flex-row items-center cursor-pointer"
+          style={{
+            fontSize: '12px',
+            color: '#185FA5',
+            background: 'none',
+            border: '1px solid #185FA5',
+            padding: '4px 12px',
+            borderRadius: '6px',
+            gap: '4px'
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#EFF6FF'}
+          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+        >
+          <RefreshCw size={12} className={isRefreshing ? "animate-spin" : ""} />
+          Refresh
+        </button>
+      </div>
+    </div>
   );
 }

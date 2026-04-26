@@ -4,155 +4,132 @@
 
 "use client";
 
-import { useEffect, useRef } from "react";
-import type { CommunityNeed } from "@/types";
-import { UrgencyBadge } from "@/components/ui/Badge";
-import Card from "@/components/ui/Card";
-import Spinner from "@/components/ui/Spinner";
-import { MapPin, Clock } from "lucide-react";
-
-interface NeedFeedProps {
-  needs: CommunityNeed[];
-  loading?: boolean;
-  error?: string | null;
-}
+import { useNeeds } from "@/hooks/useFirestore";
+import { Brain } from "lucide-react";
 
 function timeAgo(dateString: string | null): string {
   if (!dateString) return "Just now";
-
   const now = new Date();
   const date = new Date(dateString);
   const diffMs = now.getTime() - date.getTime();
   const diffMinutes = Math.floor(diffMs / 60000);
 
   if (diffMinutes < 1) return "Just now";
-  if (diffMinutes < 60) return `${diffMinutes}m ago`;
+  if (diffMinutes < 60) return `${diffMinutes}m`;
   const diffHours = Math.floor(diffMinutes / 60);
-  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffHours < 24) return `${diffHours}h`;
   const diffDays = Math.floor(diffHours / 24);
-  return `${diffDays}d ago`;
+  return `${diffDays}d`;
 }
 
-function getBorderColor(urgency: number): string {
-  if (urgency >= 8) return "border-l-urgency-critical";
-  if (urgency >= 5) return "border-l-urgency-moderate";
-  return "border-l-urgency-low";
-}
-
-export default function NeedFeed({
-  needs,
-  loading = false,
-  error = null,
-}: NeedFeedProps) {
-  const feedRef = useRef<HTMLDivElement>(null);
-  const prevCountRef = useRef(needs.length);
-
-  useEffect(() => {
-    if (needs.length > prevCountRef.current && feedRef.current) {
-      feedRef.current.scrollTo({ top: 0, behavior: "smooth" });
-    }
-    prevCountRef.current = needs.length;
-  }, [needs.length]);
-
+export default function NeedFeed() {
+  const { needs, loading } = useNeeds("default");
+  
   if (loading) {
     return (
-      <Card className="min-h-[300px] flex items-center justify-center">
-        <Spinner size="md" label="Loading needs feed..." />
-      </Card>
+      <div className="flex flex-col w-full text-center">
+        {[1, 2, 3].map((i) => (
+          <div 
+            key={i} 
+            className="animate-pulse w-full"
+            style={{ height: '60px', backgroundColor: '#F1F5F9', borderBottom: '1px solid #FFFFFF' }} 
+          />
+        ))}
+      </div>
     );
   }
 
-  if (error) {
-    return (
-      <Card className="min-h-[300px] flex items-center justify-center">
-        <p className="text-sm text-urgency-critical">{error}</p>
-      </Card>
-    );
-  }
+  const activeNeeds = needs.filter(n => n.status === "unassigned");
 
-  if (needs.length === 0) {
+  if (activeNeeds.length === 0) {
     return (
-      <Card className="min-h-[300px] flex flex-col items-center justify-center text-center">
-        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-3">
-          <span className="text-2xl">📡</span>
-        </div>
-        <h3 className="text-lg font-medium text-gray-600">No Active Needs</h3>
-        <p className="text-sm text-gray-400 mt-1 max-w-xs">
-          Upload a survey to start populating the needs feed.
-        </p>
-      </Card>
+      <div 
+        className="flex flex-col items-center justify-center"
+        style={{ padding: '40px' }}
+      >
+        <Brain size={40} color="#94A3B8" />
+        <span style={{ color: '#94A3B8', fontSize: '14px', marginTop: '12px' }}>
+          No active needs
+        </span>
+      </div>
     );
   }
 
   return (
-    <Card padding="none">
-      <div className="px-5 py-3 border-b border-gray-100">
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-gray-900">
-            Incoming Needs
-          </h3>
-          <div className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-accent-teal animate-pulse" />
-            <span className="text-xs text-gray-500">Live</span>
-          </div>
-        </div>
-      </div>
+    <div className="flex flex-col w-full">
+      {activeNeeds.map((need) => {
+        let barColor = "#639922";
+        let badgeBg = "#DCFCE7";
+        let badgeText = "#639922";
+        let badgeLabel = "LOW";
 
-      <div
-        ref={feedRef}
-        className="max-h-[500px] overflow-y-auto divide-y divide-gray-50"
-      >
-        {needs.map((need, index) => (
-          <div
-            key={need.id || index}
-            className={`
-              px-5 py-3 border-l-4 hover:bg-gray-50
-              transition-colors cursor-pointer animate-fade-in
-              ${getBorderColor(need.urgency_score)}
-            `}
-            style={{ animationDelay: `${index * 50}ms` }}
+        if (need.urgency_score >= 8) {
+          barColor = "#E24B4A";
+          badgeBg = "#FEE2E2";
+          badgeText = "#E24B4A";
+          badgeLabel = "CRITICAL";
+        } else if (need.urgency_score >= 5) {
+          barColor = "#EF9F27";
+          badgeBg = "#FEF3C7";
+          badgeText = "#EF9F27";
+          badgeLabel = "MODERATE";
+        }
+
+        return (
+          <div 
+            key={need.id}
+            className="flex flex-row items-center cursor-pointer"
+            style={{
+              borderBottom: '1px solid #F1F5F9'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F8FAFC'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
           >
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-2 mb-1">
-                <UrgencyBadge score={need.urgency_score} />
-                <span className="text-sm font-medium text-gray-900">
-                  {need.need_type}
-                </span>
-              </div>
-              <span className="text-xs text-gray-400 whitespace-nowrap">
+            {/* Left bar */}
+            <div 
+              className="flex-shrink-0 self-stretch"
+              style={{ width: '4px', backgroundColor: barColor }}
+            />
+            
+            {/* Content */}
+            <div 
+              className="flex-1 flex flex-col justify-center"
+              style={{ padding: '12px 16px' }}
+            >
+              <span style={{ fontSize: '14px', fontWeight: 500, color: '#1A202C', lineHeight: 1 }}>
+                {need.need_type}
+              </span>
+              <span style={{ fontSize: '12px', color: '#64748B', marginTop: '2px', lineHeight: 1 }}>
+                {need.location.zone}
+              </span>
+            </div>
+
+            {/* Right */}
+            <div 
+              className="flex flex-col items-end flex-shrink-0"
+              style={{ padding: '12px 16px', gap: '4px' }}
+            >
+              <span 
+                style={{
+                  fontSize: '10px',
+                  fontWeight: 600,
+                  padding: '2px 8px',
+                  borderRadius: '999px',
+                  textTransform: 'uppercase',
+                  backgroundColor: badgeBg,
+                  color: badgeText,
+                  lineHeight: 1
+                }}
+              >
+                {badgeLabel}
+              </span>
+              <span style={{ fontSize: '11px', color: '#94A3B8', lineHeight: 1 }}>
                 {timeAgo(need.created_at)}
               </span>
             </div>
-
-            <div className="flex items-center gap-3 mt-1">
-              <span className="flex items-center gap-1 text-xs text-gray-500">
-                <MapPin size={12} />
-                {need.location.zone}
-              </span>
-              <span className="flex items-center gap-1 text-xs text-gray-500">
-                <Clock size={12} />
-                {need.volunteer_hours_needed}h
-              </span>
-            </div>
-
-            <div className="flex gap-1 mt-1.5">
-              {need.required_skills.slice(0, 3).map((skill) => (
-                <span
-                  key={skill}
-                  className="text-[10px] px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded"
-                >
-                  {skill}
-                </span>
-              ))}
-              {need.required_skills.length > 3 && (
-                <span className="text-[10px] text-gray-400">
-                  +{need.required_skills.length - 3}
-                </span>
-              )}
-            </div>
           </div>
-        ))}
-      </div>
-    </Card>
+        );
+      })}
+    </div>
   );
 }

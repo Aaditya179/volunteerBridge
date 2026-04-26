@@ -4,101 +4,177 @@
 
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { Users, Target, Clock } from "lucide-react";
-import Card from "@/components/ui/Card";
+import { AlertTriangle, Users, Clock } from "lucide-react";
+import { useNeeds } from "@/hooks/useFirestore";
 
-interface CounterProps {
-  label: string;
-  value: number;
-  suffix?: string;
-  icon: React.ReactNode;
-  color: string;
-}
+export default function ImpactCounters() {
+  const { needs, loading } = useNeeds("default");
 
-function AnimatedCounter({ label, value, suffix = "", icon, color }: CounterProps) {
-  const [displayValue, setDisplayValue] = useState(0);
-  const prevValue = useRef(0);
+  const activeNeedsCount = needs.filter(n => n.status === "unassigned").length;
+  const deployedCount = needs.filter(n => n.status === "assigned" || n.status === "completed").length;
+  const avgMatchTime = "3"; // Hardcoded for now
 
-  useEffect(() => {
-    const start = prevValue.current;
-    const end = value;
-    const duration = 800;
-    const startTime = performance.now();
-
-    const animate = (currentTime: number) => {
-      const elapsed = currentTime - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3);
-      const current = Math.round(start + (end - start) * eased);
-      setDisplayValue(current);
-
-      if (progress < 1) {
-        requestAnimationFrame(animate);
-      } else {
-        prevValue.current = end;
-      }
-    };
-
-    requestAnimationFrame(animate);
-  }, [value]);
-
-  return (
-    <Card hover className="relative overflow-hidden">
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-sm font-medium text-gray-500">{label}</p>
-          <p className="text-3xl font-bold text-gray-900 mt-1">
-            {displayValue}
-            {suffix && <span className="text-lg text-gray-500 ml-1">{suffix}</span>}
-          </p>
-        </div>
-        <div
-          className={`p-2.5 rounded-xl ${color}`}
-        >
-          {icon}
-        </div>
-      </div>
-      <div
-        className={`absolute bottom-0 left-0 right-0 h-1 ${color.replace("bg-", "bg-").replace("/10", "")}`}
-        style={{ opacity: 0.2 }}
-      />
-    </Card>
+  const renderLoadingCard = () => (
+    <div 
+      style={{
+        display: 'flex',
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: 'white',
+        border: '1px solid #E2E8F0',
+        borderRadius: '8px',
+        padding: '20px',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+        gap: '16px'
+      }}
+    >
+       <div style={{ width: '48px', height: '48px', backgroundColor: '#E2E8F0', borderRadius: '12px', flexShrink: 0 }} />
+       <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+          <div style={{ height: '28px', backgroundColor: '#E2E8F0', borderRadius: '4px', width: '60%', marginBottom: '4px' }} />
+          <div style={{ height: '14px', backgroundColor: '#E2E8F0', borderRadius: '4px', width: '40%' }} />
+       </div>
+    </div>
   );
-}
 
-interface ImpactCountersProps {
-  needsCount: number;
-  volunteersDeployed: number;
-  avgMatchTime: number;
-}
-
-export default function ImpactCounters({
-  needsCount,
-  volunteersDeployed,
-  avgMatchTime,
-}: ImpactCountersProps) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-      <AnimatedCounter
-        label="Active Needs"
-        value={needsCount}
-        icon={<Target size={22} className="text-urgency-critical" />}
-        color="bg-red-50"
-      />
-      <AnimatedCounter
-        label="Volunteers Deployed"
-        value={volunteersDeployed}
-        icon={<Users size={22} className="text-brand-500" />}
-        color="bg-blue-50"
-      />
-      <AnimatedCounter
-        label="Avg Match Time"
-        value={avgMatchTime}
-        suffix="min"
-        icon={<Clock size={22} className="text-accent-teal" />}
-        color="bg-emerald-50"
-      />
+    <div>
+      <style>{`
+        .counters-grid {
+          display: grid;
+          gap: 16px;
+          grid-template-columns: 1fr;
+        }
+        @media (min-width: 768px) {
+          .counters-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+          }
+        }
+      `}</style>
+      <div className="counters-grid">
+        {loading ? (
+          <>
+            {renderLoadingCard()}
+            {renderLoadingCard()}
+            {renderLoadingCard()}
+          </>
+        ) : (
+          <>
+            {/* Active Needs Card */}
+            <div 
+              style={{
+                display: 'flex',
+                flexDirection: 'row',
+                alignItems: 'center',
+                backgroundColor: 'white',
+                border: '1px solid #E2E8F0',
+                borderRadius: '8px',
+                padding: '20px',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                gap: '16px'
+              }}
+            >
+              <div 
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: '48px',
+                  height: '48px',
+                  backgroundColor: '#FEE2E2',
+                  borderRadius: '12px',
+                  flexShrink: 0
+                }}
+              >
+                <AlertTriangle size={24} color="#E24B4A" />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <span style={{ fontSize: '28px', fontWeight: 700, color: '#1A202C', lineHeight: 1 }}>
+                  {activeNeedsCount}
+                </span>
+                <span style={{ fontSize: '13px', color: '#64748B', marginTop: '4px' }}>
+                  Active Needs
+                </span>
+              </div>
+            </div>
+
+            {/* Volunteers Deployed Card */}
+            <div 
+              style={{
+                display: 'flex',
+                flexDirection: 'row',
+                alignItems: 'center',
+                backgroundColor: 'white',
+                border: '1px solid #E2E8F0',
+                borderRadius: '8px',
+                padding: '20px',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                gap: '16px'
+              }}
+            >
+              <div 
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: '48px',
+                  height: '48px',
+                  backgroundColor: '#D1FAE5',
+                  borderRadius: '12px',
+                  flexShrink: 0
+                }}
+              >
+                <Users size={24} color="#1D9E75" />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <span style={{ fontSize: '28px', fontWeight: 700, color: '#1A202C', lineHeight: 1 }}>
+                  {deployedCount}
+                </span>
+                <span style={{ fontSize: '13px', color: '#64748B', marginTop: '4px' }}>
+                  Volunteers Deployed
+                </span>
+              </div>
+            </div>
+
+            {/* Avg Match Time Card */}
+            <div 
+              style={{
+                display: 'flex',
+                flexDirection: 'row',
+                alignItems: 'center',
+                backgroundColor: 'white',
+                border: '1px solid #E2E8F0',
+                borderRadius: '8px',
+                padding: '20px',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                gap: '16px'
+              }}
+            >
+              <div 
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: '48px',
+                  height: '48px',
+                  backgroundColor: '#DBEAFE',
+                  borderRadius: '12px',
+                  flexShrink: 0
+                }}
+              >
+                <Clock size={24} color="#185FA5" />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <span style={{ fontSize: '28px', fontWeight: 700, color: '#1A202C', lineHeight: 1 }}>
+                  {avgMatchTime}<span style={{fontSize: '18px', color: '#64748B', marginLeft: '4px'}}>min</span>
+                </span>
+                <span style={{ fontSize: '13px', color: '#64748B', marginTop: '4px' }}>
+                  Avg Match Time
+                </span>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }

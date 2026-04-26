@@ -7,28 +7,28 @@
 import { usePathname } from "next/navigation";
 import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { LogOut, Bell } from "lucide-react";
+import { LogOut, Bell, Menu } from "lucide-react";
 import { useEffect, useState } from "react";
 import { onAuthStateChanged, User } from "firebase/auth";
 
 const pageTitles: Record<string, string> = {
-  "/dashboard": "Dashboard Overview",
+  "/": "Operations Overview",
+  "/dashboard": "Operations Overview",
   "/dashboard/map": "Crisis Map",
   "/dashboard/upload": "Upload Survey",
   "/dashboard/intelligence": "AI Intelligence",
-  "/dashboard/assign": "Assignments",
 };
 
 function getPageTitle(pathname: string): string {
   for (const [key, value] of Object.entries(pageTitles)) {
-    if (pathname === key || pathname.startsWith(key + "/")) {
+    if (pathname === key || (pathname.startsWith(key + "/") && key !== "/" && key !== "/dashboard")) {
       return value;
     }
   }
-  return "Dashboard";
+  return "Operations Overview";
 }
 
-export default function TopBar() {
+export default function TopBar({ onMenuClick }: { onMenuClick?: () => void }) {
   const pathname = usePathname();
   const [user, setUser] = useState<User | null>(null);
 
@@ -48,63 +48,90 @@ export default function TopBar() {
   };
 
   const initials = user?.displayName
-    ? user.displayName
-        .split(" ")
-        .map((n) => n[0])
-        .join("")
-        .toUpperCase()
-        .slice(0, 2)
+    ? user.displayName.charAt(0).toUpperCase()
     : "U";
 
   return (
-    <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 z-30">
-      {/* Page title */}
-      <h1 className="text-lg font-semibold text-gray-900">
-        {getPageTitle(pathname)}
-      </h1>
-
-      {/* Actions */}
-      <div className="flex items-center gap-4">
+    <header 
+      style={{
+        display: 'flex',
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        height: '64px',
+        backgroundColor: 'white',
+        borderBottom: '1px solid #E2E8F0',
+        padding: '0 24px',
+        position: 'sticky',
+        top: 0,
+        zIndex: 40,
+      }}
+    >
+      {/* Left */}
+      <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '16px' }}>
         <button
-          className="relative p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors"
-          aria-label="Notifications"
+          onClick={onMenuClick}
+          className="md:hidden"
+          style={{ display: typeof window !== 'undefined' && window.innerWidth >= 768 ? 'none' : 'block', color: '#64748B', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+        >
+          <Menu size={24} />
+        </button>
+        <h1 style={{ fontSize: '20px', fontWeight: 600, color: '#1A202C', margin: 0 }}>
+          {getPageTitle(pathname)}
+        </h1>
+      </div>
+
+      {/* Right */}
+      <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '16px' }}>
+        <button
+          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: '#64748B' }}
         >
           <Bell size={20} />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-urgency-critical rounded-full" />
         </button>
 
-        <div className="h-8 w-px bg-gray-200" />
+        <div style={{ borderLeft: '1px solid #E2E8F0', height: '24px' }} />
 
-        <div className="flex items-center gap-3">
-          {user?.photoURL ? (
-            <img
-              src={user.photoURL}
-              alt={user.displayName || "User avatar"}
-              className="w-8 h-8 rounded-full object-cover"
-            />
-          ) : (
-            <div className="w-8 h-8 rounded-full bg-brand-500 flex items-center justify-center text-white text-xs font-semibold">
-              {initials}
-            </div>
-          )}
-
-          <div className="hidden sm:block">
-            <p className="text-sm font-medium text-gray-900 leading-none">
-              {user?.displayName || "User"}
-            </p>
-            <p className="text-xs text-gray-500 mt-0.5">
-              {user?.email || ""}
-            </p>
-          </div>
-
-          <button
-            onClick={handleSignOut}
-            className="p-2 rounded-lg text-gray-400 hover:text-urgency-critical hover:bg-red-50 transition-colors"
-            aria-label="Sign out"
+        <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '8px' }}>
+          <div 
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              width: '36px',
+              height: '36px',
+              borderRadius: '50%',
+              backgroundColor: '#185FA5',
+              color: 'white',
+              fontSize: '13px',
+              fontWeight: 600
+            }}
           >
-            <LogOut size={18} />
-          </button>
+            {initials}
+          </div>
+          <span 
+            className="hidden md:inline"
+            style={{ display: typeof window !== 'undefined' && window.innerWidth >= 768 ? 'inline' : 'none', fontSize: '14px', fontWeight: 500, color: '#1A202C' }}
+          >
+            {user?.displayName || "User"}
+          </span>
         </div>
+
+        <button
+          onClick={handleSignOut}
+          style={{
+            fontSize: '13px',
+            color: '#64748B',
+            cursor: 'pointer',
+            background: 'none',
+            border: 'none',
+            padding: '6px 12px',
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.color = '#E24B4A'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.color = '#64748B'; }}
+        >
+          <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '4px' }}>
+             <LogOut size={16} />
+             Sign out
+          </div>
+        </button>
       </div>
     </header>
   );
