@@ -89,6 +89,28 @@ export default function TopBar({ onMenuClick }: { onMenuClick?: () => void }) {
           <Bell size={20} />
         </button>
 
+        <button
+          onClick={() => {
+            window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true, bubbles: true }));
+          }}
+          style={{
+            background: '#F1F5F9',
+            color: '#64748B',
+            fontSize: '12px',
+            padding: '4px 10px',
+            borderRadius: '6px',
+            fontFamily: 'monospace',
+            border: '1px solid #E2E8F0',
+            cursor: 'pointer',
+            transition: 'all 0.15s ease',
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#E2E8F0'; e.currentTarget.style.color = '#1A202C'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#F1F5F9'; e.currentTarget.style.color = '#64748B'; }}
+          title="Command Palette (⌘K)"
+        >
+          ⌘K
+        </button>
+
         <div style={{ borderLeft: '1px solid #E2E8F0', height: '24px' }} />
 
         <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '8px' }}>

@@ -53,9 +53,8 @@ export default function SurveyUploader({
       formData.append("org_id", orgId);
       if (activeTab === "image" && file) {
         formData.append("file", file);
-      } else {
-        // Mock text submission via backend if applicable, 
-        // fallback to standard flow for hackathon purposes.
+      } else if (activeTab === "text" && textInput.trim().length > 0) {
+        formData.append("text_content", textInput);
       }
 
       const result = await ingestSurvey(formData);

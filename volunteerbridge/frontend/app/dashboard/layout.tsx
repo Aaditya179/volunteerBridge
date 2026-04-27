@@ -3,6 +3,7 @@ import { useState } from "react";
 import AuthGuard from "@/components/shell/AuthGuard";
 import Sidebar from "@/components/shell/Sidebar";
 import TopBar from "@/components/shell/TopBar";
+import CommandBar from "@/components/command/CommandBar";
 
 export default function DashboardLayout({
   children,
@@ -13,6 +14,9 @@ export default function DashboardLayout({
 
   return (
     <AuthGuard>
+      {/* Command Bar — available on every dashboard page */}
+      <CommandBar />
+
       {/* Outer div */}
       <div 
         style={{ display: 'flex', flexDirection: 'row', minHeight: '100vh', backgroundColor: '#F8FAFC' }}

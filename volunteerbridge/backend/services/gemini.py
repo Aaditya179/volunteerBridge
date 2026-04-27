@@ -61,7 +61,7 @@ def extract_need_from_image(image_base64: str) -> Dict:
     image_bytes = base64.b64decode(image_base64)
     image = Image.open(BytesIO(image_bytes))
 
-    model = genai.GenerativeModel("gemini-1.5-flash")
+    model = genai.GenerativeModel("gemini-flash-latest")
     response = model.generate_content(
         [EXTRACTION_SYSTEM_PROMPT, image],
         generation_config=genai.types.GenerationConfig(
@@ -96,7 +96,7 @@ def extract_need_from_text(text: str) -> Dict:
     Returns:
         Dictionary containing extracted need fields.
     """
-    model = genai.GenerativeModel("gemini-1.5-flash")
+    model = genai.GenerativeModel("gemini-flash-latest")
     prompt = f"{EXTRACTION_SYSTEM_PROMPT}\n\nSurvey text:\n{text}"
 
     response = model.generate_content(
@@ -133,7 +133,7 @@ def generate_crisis_report(needs: List[Dict]) -> Dict:
     Returns:
         Dictionary with crisis report fields.
     """
-    model = genai.GenerativeModel("gemini-1.5-flash")
+    model = genai.GenerativeModel("gemini-flash-latest")
     needs_json = json.dumps(needs, indent=2, default=str)
     prompt = f"{CRISIS_REPORT_PROMPT}\n\nActive needs data:\n{needs_json}"
 
@@ -175,7 +175,7 @@ def generate_embeddings(text: str) -> List[float]:
         List of floats representing the embedding vector.
     """
     result = genai.embed_content(
-        model="models/embedding-001",
+        model="models/text-embedding-004",
         content=text,
         task_type="retrieval_document",
     )

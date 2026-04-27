@@ -38,7 +38,12 @@ export async function ingestSurvey(data: FormData): Promise<IngestResponse> {
 
     if (file) {
       const buffer = await file.arrayBuffer();
-      const base64 = Buffer.from(buffer).toString("base64");
+      const bytes = new Uint8Array(buffer);
+      let binary = '';
+      for (let i = 0; i < bytes.byteLength; i++) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+      const base64 = window.btoa(binary);
       payload = {
         image_base64: base64,
         org_id: (data.get("org_id") as string) || "default",

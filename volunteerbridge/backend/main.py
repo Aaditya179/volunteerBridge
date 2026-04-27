@@ -410,3 +410,70 @@ async def get_volunteers(org_id: str) -> List[Volunteer]:
         )
 
     return volunteers
+
+
+@app.post("/parse-command")
+async def parse_command(request: Dict) -> Dict:
+    """Parse a natural language command into a structured dashboard action using Gemini AI."""
+    user_input = request.get("input", "")
+
+    if not user_input.strip():
+        return {
+            "action": "ai_response",
+            "response": "Please type a command.",
+            "label": "Empty command",
+        }
+
+    import json as _json
+
+    model = genai.GenerativeModel("gemini-flash-latest")
+    prompt = f"""You are a command parser for an NGO crisis coordination dashboard called VolunteerBridge.
+Parse this natural language command into a structured action.
+
+Available actions:
+- navigate: go to a dashboard page. paths: /dashboard, /dashboard/map, /dashboard/upload, /dashboard/intelligence
+- filter_map: filter the crisis map by need_type, zone, urgency_min, status
+- show_volunteers: filter volunteers by skill, availability, zone
+- assign: assign a volunteer to a need
+- generate_report: generate AI crisis intelligence report
+- show_stats: show impact statistics
+- ai_response: for questions that need a direct answer
+
+Return ONLY valid JSON:
+{{
+  "action": "navigate" | "filter_map" | "show_volunteers" | "assign" | "generate_report" | "show_stats" | "ai_response",
+  "path": null,
+  "filters": {{"need_type": null, "zone": null, "urgency_min": null, "status": null, "skill": null, "available": null}},
+  "response": null,
+  "label": "Human readable description of what this does"
+}}
+
+Command: {user_input}"""
+
+    try:
+        response = model.generate_content(
+            prompt,
+            generation_config=genai.types.GenerationConfig(
+                temperature=0.1,
+                max_output_tokens=512,
+            ),
+        )
+        text = response.text.strip()
+        if text.startswith("```"):
+            lines = text.split("\n")
+            start = 1
+            end = len(lines) - 1
+            for i, line in enumerate(lines):
+                if line.strip().startswith("```") and i > 0:
+                    end = i
+                    break
+            text = "\n".join(lines[start:end])
+        parsed = _json.loads(text.strip())
+        return parsed
+    except Exception as exc:
+        logger.warning("Command parse fallback: %s", exc)
+        return {
+            "action": "ai_response",
+            "response": f"I understood you want to: {user_input}. Try being more specific.",
+            "label": "AI Response",
+        }
