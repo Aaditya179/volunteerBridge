@@ -1,5 +1,6 @@
 /// VolunteerBridge mobile application entry point.
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
@@ -7,15 +8,20 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'firebase_options.dart';
+import 'screens/briefing_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/my_tasks_screen.dart';
+import 'screens/profile_screen.dart';
 import 'screens/profile_setup_screen.dart';
 import 'screens/task_detail_screen.dart';
 import 'screens/task_feed_screen.dart';
 import 'services/auth_service.dart';
+import 'services/connectivity_service.dart';
 import 'services/notification_service.dart';
+import 'services/offline_sync_queue.dart';
 import 'utils/theme.dart';
 import 'utils/constants.dart';
+import 'widgets/offline_banner.dart';
 
 /// Top-level background message handler — must be top-level function.
 @pragma('vm:entry-point')
@@ -34,6 +40,16 @@ Future<void> main() async {
 
   // Register background message handler
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
+  // Enable Firestore offline persistence with unlimited cache
+  FirebaseFirestore.instance.settings = const Settings(
+    persistenceEnabled: true,
+    cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
+  );
+
+  // Load any pending offline actions from disk
+  final syncQueue = OfflineSyncQueue();
+  await syncQueue.load();
 
   runApp(
     const ProviderScope(
@@ -91,6 +107,16 @@ class VolunteerBridgeApp extends ConsumerWidget {
           path: '/profile-setup',
           builder: (context, state) => const ProfileSetupScreen(),
         ),
+        GoRoute(
+          path: '/briefing',
+          builder: (context, state) {
+            final extra = state.extra as Map<String, dynamic>;
+            return BriefingScreen(
+              needId: extra['needId'] as String,
+              volunteerId: extra['volunteerId'] as String,
+            );
+          },
+        ),
         ShellRoute(
           builder: (context, state, child) {
             return _MainShell(
@@ -114,6 +140,10 @@ class VolunteerBridgeApp extends ConsumerWidget {
               path: '/my-tasks',
               builder: (context, state) => const MyTasksScreen(),
             ),
+            GoRoute(
+              path: '/profile',
+              builder: (context, state) => const ProfileScreen(),
+            ),
           ],
         ),
       ],
@@ -130,13 +160,21 @@ class _MainShell extends StatelessWidget {
 
   int get _selectedIndex {
     if (currentPath.startsWith('/my-tasks')) return 1;
+    if (currentPath.startsWith('/profile')) return 2;
     return 0; // /tasks and /tasks/:id
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: child,
+      body: Column(
+        children: [
+          // Offline banner — shown above all content when offline
+          const OfflineBanner(),
+          // Main content
+          Expanded(child: child),
+        ],
+      ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           color: Colors.white,
@@ -157,6 +195,9 @@ class _MainShell extends StatelessWidget {
                 break;
               case 1:
                 context.go('/my-tasks');
+                break;
+              case 2:
+                context.go('/profile');
                 break;
             }
           },
@@ -183,6 +224,11 @@ class _MainShell extends StatelessWidget {
               icon: Icon(Icons.assignment_outlined),
               activeIcon: Icon(Icons.assignment),
               label: 'My Tasks',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.person_outline),
+              activeIcon: Icon(Icons.person),
+              label: 'Profile',
             ),
           ],
         ),

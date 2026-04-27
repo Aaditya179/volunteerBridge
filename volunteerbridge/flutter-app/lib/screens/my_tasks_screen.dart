@@ -3,8 +3,10 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../services/connectivity_service.dart';
 import '../services/firestore_service.dart';
 import '../services/location_service.dart';
+import '../services/offline_sync_queue.dart';
 import '../models/community_need.dart';
 import '../utils/constants.dart';
 
@@ -78,31 +80,56 @@ class _MyTasksScreenState extends ConsumerState<MyTasksScreen> {
     String needId,
     String volunteerId,
   ) async {
-    try {
-      final firestoreService = ref.read(firestoreServiceProvider);
-      await firestoreService.markOnSite(assignmentId, needId, defaultOrgId);
+    final connectivity = ref.read(connectivityServiceProvider);
 
-      // Start location tracking
-      final locationService = ref.read(locationServiceProvider);
-      locationService.startTracking(
-        volunteerId: volunteerId,
-        orgId: defaultOrgId,
-      );
+    if (connectivity.currentlyOnline) {
+      // --- ONLINE ---
+      try {
+        final firestoreService = ref.read(firestoreServiceProvider);
+        await firestoreService.markOnSite(assignmentId, needId, defaultOrgId);
+
+        // Start location tracking
+        final locationService = ref.read(locationServiceProvider);
+        locationService.startTracking(
+          volunteerId: volunteerId,
+          orgId: defaultOrgId,
+        );
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Status updated: On Site'),
+              backgroundColor: urgencyMediumColor,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to update: $e'),
+              backgroundColor: urgencyHighColor,
+            ),
+          );
+        }
+      }
+    } else {
+      // --- OFFLINE: queue ---
+      final syncQueue = ref.read(offlineSyncQueueProvider);
+      await syncQueue.enqueue(PendingAction(
+        type: 'mark_on_site',
+        payload: {
+          'assignment_id': assignmentId,
+          'need_id': needId,
+          'org_id': defaultOrgId,
+        },
+      ));
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Status updated: On Site'),
-            backgroundColor: urgencyMediumColor,
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to update: $e'),
-            backgroundColor: urgencyHighColor,
+            content: Text('Queued — will sync when back online'),
+            backgroundColor: Color(0xFFD97706),
           ),
         );
       }
@@ -139,33 +166,59 @@ class _MyTasksScreenState extends ConsumerState<MyTasksScreen> {
 
     if (confirmed != true) return;
 
-    try {
-      final firestoreService = ref.read(firestoreServiceProvider);
-      await firestoreService.completeTask(
-        assignmentId: assignmentId,
-        needId: needId,
-        volunteerId: volunteerId,
-        orgId: defaultOrgId,
-      );
+    final connectivity = ref.read(connectivityServiceProvider);
 
-      // Stop location tracking
-      final locationService = ref.read(locationServiceProvider);
-      locationService.stopTracking();
+    if (connectivity.currentlyOnline) {
+      // --- ONLINE ---
+      try {
+        final firestoreService = ref.read(firestoreServiceProvider);
+        await firestoreService.completeTask(
+          assignmentId: assignmentId,
+          needId: needId,
+          volunteerId: volunteerId,
+          orgId: defaultOrgId,
+        );
+
+        // Stop location tracking
+        final locationService = ref.read(locationServiceProvider);
+        locationService.stopTracking();
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Task completed! Great work. 🎉'),
+              backgroundColor: accentTeal,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to complete: $e'),
+              backgroundColor: urgencyHighColor,
+            ),
+          );
+        }
+      }
+    } else {
+      // --- OFFLINE: queue ---
+      final syncQueue = ref.read(offlineSyncQueueProvider);
+      await syncQueue.enqueue(PendingAction(
+        type: 'complete_task',
+        payload: {
+          'assignment_id': assignmentId,
+          'need_id': needId,
+          'volunteer_id': volunteerId,
+          'org_id': defaultOrgId,
+        },
+      ));
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Task completed! Great work. 🎉'),
-            backgroundColor: accentTeal,
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to complete: $e'),
-            backgroundColor: urgencyHighColor,
+            content: Text('Completion queued — will sync when back online'),
+            backgroundColor: Color(0xFFD97706),
           ),
         );
       }

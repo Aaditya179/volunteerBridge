@@ -477,3 +477,79 @@ Command: {user_input}"""
             "response": f"I understood you want to: {user_input}. Try being more specific.",
             "label": "AI Response",
         }
+
+
+@app.post("/briefing")
+async def generate_briefing(request: Dict) -> Dict:
+    """Generate a personalized AI volunteer briefing using Gemini."""
+    volunteer_name = request.get("volunteer_name", "Volunteer")
+    volunteer_skills = request.get("skills", [])
+    tasks_completed = request.get("tasks_completed", 0)
+    need_type = request.get("need_type", "Community Need")
+    need_zone = request.get("zone", "the area")
+    urgency_score = request.get("urgency_score", 5)
+    raw_text = request.get("raw_text", "")
+    nearby_volunteers = request.get("nearby_volunteers", [])
+
+    nearby_text = ", ".join(nearby_volunteers) if nearby_volunteers else "none"
+    skills_text = ", ".join(volunteer_skills) if volunteer_skills else "general support"
+    situation_detail = raw_text if raw_text else f"A {need_type} situation requiring immediate attention in {need_zone}"
+
+    prompt = f"""You are generating a personalized field briefing for an NGO volunteer.
+
+Volunteer: {volunteer_name}
+Skills: {skills_text}
+Tasks completed: {tasks_completed}
+Task type: {need_type}
+Location: {need_zone}
+Urgency: {urgency_score}/10
+Situation details: {situation_detail}
+Other nearby volunteers: {nearby_text}
+
+Generate a personalized briefing. Return ONLY valid JSON, no markdown:
+{{
+  "situation": "2-3 sentence plain language description of what is happening",
+  "your_role": "1-2 sentences explaining why this volunteer specifically is ideal and what they should do",
+  "what_to_expect": "2-3 practical sentences about what they will encounter and how to prepare",
+  "coordinate_with": "mention specific nearby volunteers by name if any, otherwise say they are sole responder",
+  "safety_note": "one critical safety consideration specific to this situation"
+}}
+
+Keep total response under 200 words. Write for someone reading on a phone while moving fast.
+Use the volunteer's name ({volunteer_name}) naturally in the your_role section.
+Reference their specific skills ({skills_text}) where relevant."""
+
+    try:
+        model = genai.GenerativeModel("gemini-flash-latest")
+        response = model.generate_content(
+            prompt,
+            generation_config=genai.types.GenerationConfig(
+                temperature=0.3,
+                max_output_tokens=512,
+            ),
+        )
+        text = response.text.strip()
+        if "```" in text:
+            lines = text.split("\n")
+            start = 0
+            end = len(lines)
+            for i, line in enumerate(lines):
+                if line.strip().startswith("```") and i == 0:
+                    start = 1
+                elif line.strip().startswith("```") and i > 0:
+                    end = i
+                    break
+            text = "\n".join(lines[start:end])
+
+        import json as _json
+        parsed = _json.loads(text.strip())
+        return parsed
+    except Exception as exc:
+        logger.warning("Briefing generation fallback: %s", exc)
+        return {
+            "situation": f"A {need_type} situation requiring immediate assistance in {need_zone}.",
+            "your_role": f"{volunteer_name}, your skills in {skills_text} make you well-suited for this task.",
+            "what_to_expect": "Assess the situation carefully on arrival and act according to your training.",
+            "coordinate_with": f"Nearby volunteers: {nearby_text}" if nearby_volunteers else "You are the sole responder for this task.",
+            "safety_note": "Follow all standard safety protocols and contact your coordinator if the situation escalates.",
+        }

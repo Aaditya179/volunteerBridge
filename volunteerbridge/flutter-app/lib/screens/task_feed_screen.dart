@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shimmer/shimmer.dart';
 import '../services/auth_service.dart';
+import '../services/connectivity_service.dart';
 import '../services/firestore_service.dart';
 import '../utils/constants.dart';
 import '../widgets/task_card.dart';
@@ -80,21 +81,30 @@ class _TaskFeedScreenState extends ConsumerState<TaskFeedScreen> {
           }
 
           if (snapshot.hasError) {
+            final connectivity = ref.read(connectivityServiceProvider);
+            final isOffline = !connectivity.currentlyOnline;
+
             return Center(
               child: Padding(
                 padding: const EdgeInsets.all(32),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.cloud_off, size: 48, color: urgencyMediumColor),
+                    Icon(
+                      isOffline ? Icons.wifi_off_rounded : Icons.cloud_off,
+                      size: 48,
+                      color: isOffline ? const Color(0xFFD97706) : urgencyMediumColor,
+                    ),
                     const SizedBox(height: 16),
                     Text(
-                      'Connection Error',
+                      isOffline ? 'You\'re Offline' : 'Connection Error',
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Unable to connect to the server.\nCheck your internet connection.',
+                      isOffline
+                          ? 'Showing cached data.\nNew tasks will load when connected.'
+                          : 'Unable to connect to the server.\nCheck your internet connection.',
                       style: Theme.of(context).textTheme.bodySmall,
                       textAlign: TextAlign.center,
                     ),

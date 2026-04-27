@@ -6,7 +6,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../services/api_service.dart';
+import '../services/connectivity_service.dart';
 import '../services/firestore_service.dart';
+import '../services/offline_sync_queue.dart';
 import '../utils/constants.dart';
 import '../widgets/urgency_badge.dart';
 import '../widgets/skill_tag.dart';
@@ -55,43 +57,71 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
 
     setState(() => _accepting = true);
 
-    try {
-      final apiService = ref.read(apiServiceProvider);
-      final success = await apiService.acceptTask(
-        widget.needId,
-        user.uid,
-        defaultOrgId,
-      );
+    final connectivity = ref.read(connectivityServiceProvider);
+    final isOnline = connectivity.currentlyOnline;
 
-      if (mounted) {
-        if (success) {
+    if (isOnline) {
+      // --- ONLINE: standard flow ---
+      try {
+        final apiService = ref.read(apiServiceProvider);
+        final success = await apiService.acceptTask(
+          widget.needId,
+          user.uid,
+          defaultOrgId,
+        );
+
+        if (mounted) {
+          if (success) {
+            context.go('/briefing', extra: {
+              'needId': widget.needId,
+              'volunteerId': user.uid,
+            });
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Failed to accept task. Please try again.'),
+                backgroundColor: urgencyHighColor,
+              ),
+            );
+          }
+        }
+      } catch (e) {
+        if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Task accepted! Check My Tasks.'),
-              backgroundColor: accentTeal,
-            ),
-          );
-          context.go('/my-tasks');
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Failed to accept task. Please try again.'),
+            SnackBar(
+              content: Text('Error: ${e.toString().replaceAll("Exception: ", "")}'),
               backgroundColor: urgencyHighColor,
             ),
           );
         }
+      } finally {
+        if (mounted) setState(() => _accepting = false);
       }
-    } catch (e) {
+    } else {
+      // --- OFFLINE: queue and navigate with fallback ---
+      final syncQueue = ref.read(offlineSyncQueueProvider);
+      await syncQueue.enqueue(PendingAction(
+        type: 'accept_task',
+        payload: {
+          'need_id': widget.needId,
+          'volunteer_id': user.uid,
+          'org_id': defaultOrgId,
+        },
+      ));
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: ${e.toString().replaceAll("Exception: ", "")}'),
-            backgroundColor: urgencyHighColor,
+          const SnackBar(
+            content: Text('Task queued — will confirm when back online'),
+            backgroundColor: Color(0xFFD97706),
           ),
         );
+        context.go('/briefing', extra: {
+          'needId': widget.needId,
+          'volunteerId': user.uid,
+        });
+        setState(() => _accepting = false);
       }
-    } finally {
-      if (mounted) setState(() => _accepting = false);
     }
   }
 

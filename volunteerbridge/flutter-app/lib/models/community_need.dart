@@ -11,6 +11,7 @@ class CommunityNeed {
   final Map<String, dynamic> location;
   final double volunteerHoursNeeded;
   final double? confidenceScore;
+  final String? rawText;
   final String status;
   final String orgId;
   final DateTime? createdAt;
@@ -23,6 +24,7 @@ class CommunityNeed {
     required this.location,
     this.volunteerHoursNeeded = 0,
     this.confidenceScore,
+    this.rawText,
     this.status = 'unassigned',
     this.orgId = 'default',
     this.createdAt,
@@ -56,6 +58,7 @@ class CommunityNeed {
       volunteerHoursNeeded:
           (json['volunteer_hours_needed'] as num?)?.toDouble() ?? 0,
       confidenceScore: (json['confidence_score'] as num?)?.toDouble(),
+      rawText: json['raw_text'] as String?,
       status: json['status'] as String? ?? 'unassigned',
       orgId: json['org_id'] as String? ?? 'default',
       createdAt: parsedDate,
@@ -71,6 +74,7 @@ class CommunityNeed {
       'location': location,
       'volunteer_hours_needed': volunteerHoursNeeded,
       if (confidenceScore != null) 'confidence_score': confidenceScore,
+      if (rawText != null) 'raw_text': rawText,
       'status': status,
       'org_id': orgId,
       if (createdAt != null) 'created_at': createdAt!.toIso8601String(),
