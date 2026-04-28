@@ -44,14 +44,24 @@ logger = logging.getLogger(__name__)
 
 # Initialize Firebase Admin SDK
 try:
-    cred_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS", "./serviceAccountKey.json")
-    if os.path.exists(cred_path):
-        cred = credentials.Certificate(cred_path)
+    service_account_json = os.getenv("FIREBASE_SERVICE_ACCOUNT_JSON")
+    if service_account_json:
+        # Load credentials from environment variable (JSON string)
+        import json as _json
+        service_account_info = _json.loads(service_account_json)
+        cred = credentials.Certificate(service_account_info)
         firebase_admin.initialize_app(cred)
-        logger.info("Firebase initialized with service account.")
+        logger.info("Firebase initialized with credentials from environment variable.")
     else:
-        firebase_admin.initialize_app()
-        logger.info("Firebase initialized with default credentials.")
+        # Fallback to local file or default credentials
+        cred_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS", "./serviceAccountKey.json")
+        if os.path.exists(cred_path):
+            cred = credentials.Certificate(cred_path)
+            firebase_admin.initialize_app(cred)
+            logger.info(f"Firebase initialized with service account file: {cred_path}")
+        else:
+            firebase_admin.initialize_app()
+            logger.info("Firebase initialized with default credentials.")
     db = firestore.client()
 except Exception as e:
     logger.error(f"Firebase initialization failed: {e}")
@@ -426,7 +436,7 @@ async def parse_command(request: Dict) -> Dict:
 
     import json as _json
 
-    model = genai.GenerativeModel("gemini-flash-latest")
+    model = genai.GenerativeModel("gemini-2.5-flash-lite")
     prompt = f"""You are a command parser for an NGO crisis coordination dashboard called VolunteerBridge.
 Parse this natural language command into a structured action.
 
@@ -520,7 +530,7 @@ Use the volunteer's name ({volunteer_name}) naturally in the your_role section.
 Reference their specific skills ({skills_text}) where relevant."""
 
     try:
-        model = genai.GenerativeModel("gemini-flash-latest")
+        model = genai.GenerativeModel("gemini-2.5-flash-lite")
         response = model.generate_content(
             prompt,
             generation_config=genai.types.GenerationConfig(

@@ -32,17 +32,17 @@ export default function ExtractionPreview({ result }: ExtractionPreviewProps) {
   const renderRow = (label: string, content: React.ReactNode) => (
     <div 
       className="flex flex-row items-center"
-      style={{ paddingBottom: '12px', borderBottom: '1px solid #E2E8F0', marginBottom: '12px' }}
+      style={{ paddingBottom: '12px', borderBottom: '1px solid var(--border-subtle)', marginBottom: '12px' }}
     >
       <div 
         className="flex-shrink-0"
-        style={{ width: '120px', fontSize: '13px', fontWeight: 500, color: '#64748B' }}
+        style={{ width: '120px', fontSize: '13px', fontWeight: 500, color: 'var(--text-secondary)' }}
       >
         {label}
       </div>
       <div 
         className="flex-1"
-        style={{ fontSize: '14px', fontWeight: 600, color: '#1A202C' }}
+        style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}
       >
         {content}
       </div>
@@ -57,7 +57,7 @@ export default function ExtractionPreview({ result }: ExtractionPreviewProps) {
       {renderRow(
         "Urgency", 
         <div className="flex flex-col gap-1">
-          <span style={{ color: need.urgency_score >= 8 ? '#E24B4A' : '#1A202C' }}>
+          <span style={{ color: need.urgency_score >= 8 ? '#E24B4A' : 'var(--text-primary)' }}>
             {need.urgency_score}/10
           </span>
           <div className="flex flex-row" style={{ gap: '2px', height: '8px' }}>
@@ -66,7 +66,7 @@ export default function ExtractionPreview({ result }: ExtractionPreviewProps) {
                 key={i}
                 className="flex-1"
                 style={{
-                  backgroundColor: i < need.urgency_score ? (need.urgency_score >= 8 ? '#E24B4A' : '#EF9F27') : '#E2E8F0',
+                  backgroundColor: i < need.urgency_score ? (need.urgency_score >= 8 ? '#E24B4A' : '#EF9F27') : 'var(--border-subtle)',
                   borderRadius: '1px'
                 }}
               />
@@ -86,7 +86,7 @@ export default function ExtractionPreview({ result }: ExtractionPreviewProps) {
         "Reliability",
         <div className="flex flex-col gap-1">
           <span>{reliability}%</span>
-          <div style={{ width: '100%', backgroundColor: '#E2E8F0', borderRadius: '999px', overflow: 'hidden' }}>
+          <div style={{ width: '100%', backgroundColor: 'var(--border-subtle)', borderRadius: '999px', overflow: 'hidden' }}>
             <div 
               style={{
                 height: '6px',

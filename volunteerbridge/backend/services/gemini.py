@@ -61,7 +61,7 @@ def extract_need_from_image(image_base64: str) -> Dict:
     image_bytes = base64.b64decode(image_base64)
     image = Image.open(BytesIO(image_bytes))
 
-    model = genai.GenerativeModel("gemini-flash-latest")
+    model = genai.GenerativeModel("gemini-2.5-flash-lite")
     response = model.generate_content(
         [EXTRACTION_SYSTEM_PROMPT, image],
         generation_config=genai.types.GenerationConfig(
@@ -96,7 +96,7 @@ def extract_need_from_text(text: str) -> Dict:
     Returns:
         Dictionary containing extracted need fields.
     """
-    model = genai.GenerativeModel("gemini-flash-latest")
+    model = genai.GenerativeModel("gemini-2.5-flash-lite")
     prompt = f"{EXTRACTION_SYSTEM_PROMPT}\n\nSurvey text:\n{text}"
 
     response = model.generate_content(
@@ -133,7 +133,7 @@ def generate_crisis_report(needs: List[Dict]) -> Dict:
     Returns:
         Dictionary with crisis report fields.
     """
-    model = genai.GenerativeModel("gemini-flash-latest")
+    model = genai.GenerativeModel("gemini-2.5-flash-lite")
     needs_json = json.dumps(needs, indent=2, default=str)
     prompt = f"{CRISIS_REPORT_PROMPT}\n\nActive needs data:\n{needs_json}"
 
