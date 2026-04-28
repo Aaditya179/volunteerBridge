@@ -4,7 +4,7 @@ import ImpactCounters from "@/components/shell/ImpactCounters";
 import NeedFeed from "@/components/intake/NeedFeed";
 import CrisisReportCard from "@/components/intake/CrisisReport";
 import { useNeeds } from "@/hooks/useFirestore";
-import { Brain } from "lucide-react";
+import { Brain, TrendingUp, Star, AlertTriangle, Lightbulb } from "lucide-react";
 
 export default function DashboardPage() {
   const { needs } = useNeeds("default");
@@ -73,20 +73,20 @@ export default function DashboardPage() {
           <Brain size={20} color="#6366f1" /> AI Insights
         </h3>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px' }}>
-          {[
-            { icon: '🔥', title: 'Trending Need', text: 'Medical aid requests increased 45% in Dharavi this week' },
-            { icon: '⭐', title: 'Top Volunteer', text: 'Priya Sharma: 23 tasks, 96% completion, highest reliability' },
-            { icon: '⚠️', title: 'Skill Gap', text: 'High demand for Construction & Heavy Lifting — 2 unmatched tasks' },
-            { icon: '💡', title: 'Recommendation', text: 'Pre-position medical volunteers near Dharavi to cut response time 40%' },
-          ].map((item, i) => (
+          {([
+            { Icon: TrendingUp, color: '#ef4444', title: 'Trending Need', text: 'Medical aid requests increased 45% in Dharavi this week' },
+            { Icon: Star, color: '#f59e0b', title: 'Top Volunteer', text: 'Priya Sharma: 23 tasks, 96% completion, highest reliability' },
+            { Icon: AlertTriangle, color: '#f59e0b', title: 'Skill Gap', text: 'High demand for Construction & Heavy Lifting — 2 unmatched tasks' },
+            { Icon: Lightbulb, color: '#22d3ee', title: 'Recommendation', text: 'Pre-position medical volunteers near Dharavi to cut response time 40%' },
+          ] as const).map((item, i) => (
             <div key={i} style={{
               padding: '16px', borderRadius: '12px',
               background: 'rgba(17,24,39,0.5)',
               border: '1px solid var(--border-subtle)',
               transition: 'all 0.3s ease',
             }}>
-              <p style={{ fontWeight: 600, fontSize: '13px', marginBottom: '6px', color: '#a5b4fc' }}>
-                {item.icon} {item.title}
+              <p style={{ fontWeight: 600, fontSize: '13px', marginBottom: '6px', color: '#a5b4fc', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <item.Icon size={14} color={item.color} /> {item.title}
               </p>
               <p style={{ fontSize: '13px', lineHeight: 1.5, color: 'var(--text-secondary)', margin: 0 }}>
                 {item.text}

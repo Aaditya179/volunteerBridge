@@ -9,7 +9,8 @@
 import { useState, useEffect } from "react";
 import {
   Shield, Phone, MapPin, Clock, AlertTriangle,
-  CheckCircle, Users, Heart, Radio, Eye, Bell
+  CheckCircle, Users, Heart, Radio, Eye, Bell,
+  Flame, Activity, Timer, Siren
 } from "lucide-react";
 
 // Mock data for buddy pairs
@@ -100,8 +101,8 @@ export default function BuddySystemPage() {
     <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       {/* Header */}
       <div>
-        <h2 style={{ fontSize: '22px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '4px' }}>
-          🔥 Buddy System & SOS
+        <h2 style={{ fontSize: '22px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <Shield size={22} color="#6366f1" /> Buddy System & SOS
         </h2>
         <p style={{ fontSize: '14px', color: 'var(--text-secondary)', margin: 0 }}>
           Women safety monitoring — Real-time check-ins, live location, emergency SOS
@@ -111,13 +112,13 @@ export default function BuddySystemPage() {
       {/* Stats Row */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
         {[
-          { label: 'Active Pairs', value: activePairs, icon: '👥', color: '#22c55e' },
-          { label: 'Total Monitored', value: totalPairs * 2, icon: '👁️', color: '#6366f1' },
-          { label: 'Overdue Check-ins', value: overduePairs, icon: '⏰', color: '#f59e0b' },
-          { label: 'SOS Active', value: sosPairs, icon: '🚨', color: '#ef4444' },
+          { label: 'Active Pairs', value: activePairs, Icon: Users, color: '#22c55e' },
+          { label: 'Total Monitored', value: totalPairs * 2, Icon: Eye, color: '#6366f1' },
+          { label: 'Overdue Check-ins', value: overduePairs, Icon: Timer, color: '#f59e0b' },
+          { label: 'SOS Active', value: sosPairs, Icon: AlertTriangle, color: '#ef4444' },
         ].map((s, i) => (
           <div key={i} className="card" style={{ padding: '20px' }}>
-            <div style={{ fontSize: '20px', marginBottom: '6px' }}>{s.icon}</div>
+            <div style={{ marginBottom: '6px' }}><s.Icon size={20} color={s.color} /></div>
             <p style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>{s.label}</p>
             <span style={{ fontSize: '28px', fontWeight: 800, color: s.color, lineHeight: 1 }}>{s.value}</span>
           </div>
@@ -143,7 +144,7 @@ export default function BuddySystemPage() {
             </div>
             <div>
               <p style={{ fontWeight: 700, fontSize: '16px', color: '#fca5a5', margin: 0 }}>
-                ⚠️ {sosPairs} SOS Alert{sosPairs > 1 ? 's' : ''} Active
+                <AlertTriangle size={16} style={{ display: 'inline', marginRight: 6 }} />{sosPairs} SOS Alert{sosPairs > 1 ? 's' : ''} Active
               </p>
               <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: '4px 0 0 0' }}>
                 Emergency response teams have been notified. Buddy is en route.
@@ -189,7 +190,7 @@ export default function BuddySystemPage() {
                 border: '1px solid rgba(99, 102, 241, 0.15)',
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                  <span style={{ fontSize: '20px' }}>{pair.volunteer.avatar}</span>
+                  <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 700, color: 'white', flexShrink: 0 }}>{pair.volunteer.name.split(' ').map((n: string) => n[0]).join('').slice(0,2)}</div>
                   <div>
                     <p style={{ fontWeight: 600, fontSize: '13px', color: 'var(--text-primary)', margin: 0, lineHeight: 1 }}>{pair.volunteer.name}</p>
                     <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>Volunteer</p>
@@ -210,7 +211,7 @@ export default function BuddySystemPage() {
                 border: '1px solid rgba(34, 211, 238, 0.15)',
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                  <span style={{ fontSize: '20px' }}>{pair.buddy.avatar}</span>
+                  <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg, #22d3ee, #0e7490)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 700, color: 'white', flexShrink: 0 }}>{pair.buddy.name.split(' ').map((n: string) => n[0]).join('').slice(0,2)}</div>
                   <div>
                     <p style={{ fontWeight: 600, fontSize: '13px', color: 'var(--text-primary)', margin: 0, lineHeight: 1 }}>{pair.buddy.name}</p>
                     <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>Trusted Buddy</p>
@@ -235,7 +236,7 @@ export default function BuddySystemPage() {
                   fontSize: '11px', fontWeight: 700,
                   color: pair.checkinStatus === 'on-time' ? '#22c55e' : pair.checkinStatus === 'overdue' ? '#f59e0b' : '#ef4444',
                 }}>
-                  {pair.checkinStatus === 'on-time' ? '✓ On Time' : pair.checkinStatus === 'overdue' ? '⚠ Overdue' : '🚨 SOS Active'}
+                  {pair.checkinStatus === 'on-time' ? '✓ On Time' : pair.checkinStatus === 'overdue' ? '! Overdue' : '⚑ SOS Active'}
                 </span>
               </div>
               <div className="progress-bar">
@@ -319,10 +320,11 @@ export default function BuddySystemPage() {
                 width: 36, height: 36, borderRadius: '50%',
                 background: pair.sosActive ? '#ef4444' : pair.checkinStatus === 'overdue' ? '#f59e0b' : '#22c55e',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: '16px', boxShadow: `0 0 20px ${pair.sosActive ? 'rgba(239,68,68,0.5)' : 'rgba(34,197,94,0.3)'}`,
+                fontSize: '13px', fontWeight: 700, color: 'white',
+                boxShadow: `0 0 20px ${pair.sosActive ? 'rgba(239,68,68,0.5)' : 'rgba(34,197,94,0.3)'}`,
                 border: '3px solid rgba(255,255,255,0.2)',
               }}>
-                {pair.volunteer.avatar}
+                {pair.volunteer.name.split(' ').map((n: string) => n[0]).join('').slice(0,2)}
               </div>
               <p style={{
                 fontSize: '10px', fontWeight: 600, color: 'var(--text-secondary)',
@@ -342,7 +344,7 @@ export default function BuddySystemPage() {
             backdropFilter: 'blur(10px)',
             border: '1px solid var(--border-subtle)',
           }}>
-            📍 Mumbai Metropolitan Area — {pairs.length} pairs tracked
+<MapPin size={13} style={{ display: 'inline', marginRight: 4 }} />Mumbai Metropolitan Area — {pairs.length} pairs tracked
           </div>
         </div>
       </div>

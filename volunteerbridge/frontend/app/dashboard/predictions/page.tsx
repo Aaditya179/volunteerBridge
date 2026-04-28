@@ -1,23 +1,33 @@
+"use client";
+import React from "react";
 /**
  * Disaster Prediction Dashboard
  * Predicts upcoming risks (floods, heatwaves, etc.) in regions like Maharashtra and Gujarat.
  * Displays probability, timeline, impact; suggests resource allocation and volunteer deployment.
  */
 
-"use client";
-
 import { useState } from "react";
 import {
   CloudLightning, Droplets, Thermometer, Wind,
   AlertTriangle, MapPin, TrendingUp, Users,
-  ArrowRight, Clock, Shield, Brain
+  ArrowRight, Clock, Shield, Brain,
+  CloudRain, Flame, Mountain,
+  BarChart2, AlertOctagon, Home
 } from "lucide-react";
+
+// Map type -> lucide icon component
+const TYPE_ICONS: Record<string, React.ElementType> = {
+  Flood: Droplets,
+  Heatwave: Flame,
+  Cyclone: Wind,
+  Landslide: Mountain,
+};
 
 const PREDICTIONS = [
   {
     id: 'pred1',
     type: 'Flood',
-    icon: '🌊',
+    icon: 'Flood',
     region: 'Mumbai, Maharashtra',
     probability: 87,
     timeline: '48-72 hours',
@@ -45,7 +55,7 @@ const PREDICTIONS = [
   {
     id: 'pred2',
     type: 'Heatwave',
-    icon: '🔥',
+    icon: 'Heatwave',
     region: 'Ahmedabad, Gujarat',
     probability: 92,
     timeline: '24-48 hours',
@@ -73,7 +83,7 @@ const PREDICTIONS = [
   {
     id: 'pred3',
     type: 'Cyclone',
-    icon: '🌀',
+    icon: 'Cyclone',
     region: 'Surat, Gujarat',
     probability: 45,
     timeline: '5-7 days',
@@ -101,7 +111,7 @@ const PREDICTIONS = [
   {
     id: 'pred4',
     type: 'Landslide',
-    icon: '⛰️',
+    icon: 'Landslide',
     region: 'Pune, Maharashtra',
     probability: 35,
     timeline: '7-10 days',
@@ -152,8 +162,8 @@ export default function PredictionsPage() {
     <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       {/* Header */}
       <div>
-        <h2 style={{ fontSize: '22px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '4px' }}>
-          🌧️ Disaster Prediction Dashboard
+        <h2 style={{ fontSize: '22px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <CloudRain size={22} color="#22d3ee" /> Disaster Prediction Dashboard
         </h2>
         <p style={{ fontSize: '14px', color: 'var(--text-secondary)', margin: 0 }}>
           AI-driven risk forecasting for Maharashtra & Gujarat — proactive disaster management
@@ -163,13 +173,13 @@ export default function PredictionsPage() {
       {/* Overview Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
         {[
-          { label: 'Active Predictions', value: PREDICTIONS.length, icon: '📊', color: '#6366f1' },
-          { label: 'Critical Alerts', value: PREDICTIONS.filter(p => p.severity === 'critical').length, icon: '🚨', color: '#ef4444' },
-          { label: 'Volunteers Needed', value: PREDICTIONS.reduce((s, p) => s + p.resources.volunteersNeeded, 0), icon: '👥', color: '#22d3ee' },
-          { label: 'Population at Risk', value: '5.1M', icon: '🏘️', color: '#f59e0b' },
+          { label: 'Active Predictions', value: PREDICTIONS.length, Icon: BarChart2, color: '#6366f1' },
+          { label: 'Critical Alerts', value: PREDICTIONS.filter(p => p.severity === 'critical').length, Icon: AlertTriangle, color: '#ef4444' },
+          { label: 'Volunteers Needed', value: PREDICTIONS.reduce((s, p) => s + p.resources.volunteersNeeded, 0), Icon: Users, color: '#22d3ee' },
+          { label: 'Population at Risk', value: '5.1M', Icon: Home, color: '#f59e0b' },
         ].map((s, i) => (
           <div key={i} className="card" style={{ padding: '20px' }}>
-            <div style={{ fontSize: '20px', marginBottom: '6px' }}>{s.icon}</div>
+            <div style={{ marginBottom: '6px' }}><s.Icon size={20} color={s.color} /></div>
             <p style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>{s.label}</p>
             <span style={{ fontSize: '28px', fontWeight: 800, color: s.color, lineHeight: 1 }}>{s.value}</span>
           </div>
@@ -198,7 +208,7 @@ export default function PredictionsPage() {
               {/* Header Row */}
               <div style={{ padding: '20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                  <span style={{ fontSize: '32px' }}>{pred.icon}</span>
+                  <div style={{ width: 48, height: 48, borderRadius: '12px', background: `rgba(${pred.probability >= 80 ? '239,68,68' : pred.probability >= 60 ? '245,158,11' : '34,211,238'}, 0.12)`, border: `1px solid rgba(${pred.probability >= 80 ? '239,68,68' : pred.probability >= 60 ? '245,158,11' : '34,211,238'}, 0.3)`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{React.createElement(TYPE_ICONS[pred.type] || CloudLightning, { size: 24, color: pred.probability >= 80 ? '#ef4444' : pred.probability >= 60 ? '#f59e0b' : '#22d3ee' })}</div>
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
                       <h3 style={{ fontWeight: 700, fontSize: '18px', color: 'var(--text-primary)', margin: 0 }}>

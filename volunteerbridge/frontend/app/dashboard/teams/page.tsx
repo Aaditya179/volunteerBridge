@@ -10,20 +10,23 @@ import { useState } from "react";
 import {
   Users, Zap, Star, MapPin, Shield,
   RefreshCw, CheckCircle, ArrowRight, Clock,
-  Heart, Truck, Wrench, Navigation, Brain
+  Heart, Truck, Wrench, Navigation, Brain,
+  Stethoscope, Car, Package, Compass,
+  Target, Rocket
 } from "lucide-react";
 
-const SKILL_ICONS: Record<string, string> = {
-  'Medic': '🏥',
-  'Driver': '🚗',
-  'Logistics': '📦',
-  'Local Guide': '🗺️',
-  'Communication': '📡',
-  'First Aid': '⛑️',
-  'Construction': '🔨',
-  'Counseling': '💬',
-  'Water Rescue': '🏊',
-  'Translator': '🌐',
+// Skill icon colours for badge
+const SKILL_COLORS: Record<string, string> = {
+  'Medic': '#ef4444',
+  'Driver': '#22d3ee',
+  'Logistics': '#f59e0b',
+  'Local Guide': '#22c55e',
+  'Communication': '#6366f1',
+  'First Aid': '#f97316',
+  'Construction': '#a16207',
+  'Counseling': '#8b5cf6',
+  'Water Rescue': '#0ea5e9',
+  'Translator': '#10b981',
 };
 
 const MOCK_TEAMS = [
@@ -132,8 +135,8 @@ export default function TeamsPage() {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
-          <h2 style={{ fontSize: '22px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '4px' }}>
-            👥 Micro-Team Auto Formation
+          <h2 style={{ fontSize: '22px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <Users size={22} color="#6366f1" /> Micro-Team Auto Formation
           </h2>
           <p style={{ fontSize: '14px', color: 'var(--text-secondary)', margin: 0 }}>
             AI-optimized balanced response units — Medic + Driver + Logistics + Local Guide
@@ -163,13 +166,13 @@ export default function TeamsPage() {
       {/* Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
         {[
-          { label: 'Active Teams', value: teams.length, icon: '🎯', color: '#6366f1' },
-          { label: 'Deployed', value: deployedCount, icon: '🚀', color: '#22c55e' },
-          { label: 'Total Volunteers', value: totalVolunteers, icon: '👥', color: '#22d3ee' },
-          { label: 'Avg Match Score', value: `${avgMatch}%`, icon: '⚡', color: '#f59e0b' },
+          { label: 'Active Teams', value: teams.length, Icon: Target, color: '#6366f1' },
+          { label: 'Deployed', value: deployedCount, Icon: Rocket, color: '#22c55e' },
+          { label: 'Total Volunteers', value: totalVolunteers, Icon: Users, color: '#22d3ee' },
+          { label: 'Avg Match Score', value: `${avgMatch}%`, Icon: Zap, color: '#f59e0b' },
         ].map((s, i) => (
           <div key={i} className="card" style={{ padding: '20px' }}>
-            <div style={{ fontSize: '20px', marginBottom: '6px' }}>{s.icon}</div>
+            <div style={{ marginBottom: '6px' }}><s.Icon size={20} color={s.color} /></div>
             <p style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>{s.label}</p>
             <span style={{ fontSize: '28px', fontWeight: 800, color: s.color, lineHeight: 1 }}>{s.value}</span>
           </div>
@@ -186,10 +189,10 @@ export default function TeamsPage() {
         </h3>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', flexWrap: 'wrap' }}>
           {[
-            { skill: 'Medic', icon: '🏥', color: '#ef4444' },
-            { skill: 'Driver', icon: '🚗', color: '#22d3ee' },
-            { skill: 'Logistics', icon: '📦', color: '#f59e0b' },
-            { skill: 'Local Guide', icon: '🗺️', color: '#22c55e' },
+            { skill: 'Medic', Icon: Stethoscope, color: '#ef4444' },
+            { skill: 'Driver', Icon: Car, color: '#22d3ee' },
+            { skill: 'Logistics', Icon: Package, color: '#f59e0b' },
+            { skill: 'Local Guide', Icon: Compass, color: '#22c55e' },
           ].map((s, i) => (
             <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <div style={{
@@ -197,9 +200,8 @@ export default function TeamsPage() {
                 background: `rgba(${s.color === '#ef4444' ? '239,68,68' : s.color === '#22d3ee' ? '34,211,238' : s.color === '#f59e0b' ? '245,158,11' : '34,197,94'}, 0.1)`,
                 border: `1px solid ${s.color}33`,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: '22px',
               }}>
-                {s.icon}
+                <s.Icon size={22} color={s.color} />
               </div>
               <div>
                 <p style={{ fontWeight: 600, fontSize: '13px', color: 'var(--text-primary)', margin: 0 }}>{s.skill}</p>
@@ -298,7 +300,7 @@ export default function TeamsPage() {
                       border: '1px solid var(--border-subtle)',
                     }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <span style={{ fontSize: '18px' }}>{member.avatar}</span>
+                        <div style={{ width: 32, height: 32, borderRadius: '50%', background: `linear-gradient(135deg, ${SKILL_COLORS[member.skill] || '#6366f1'}, #1e1b4b)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 700, color: 'white', flexShrink: 0 }}>{member.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2)}</div>
                         <div>
                           <p style={{ fontWeight: 600, fontSize: '13px', color: 'var(--text-primary)', margin: 0, lineHeight: 1.2 }}>
                             {member.name}
@@ -306,10 +308,10 @@ export default function TeamsPage() {
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px' }}>
                             <span style={{
                               fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '6px',
-                              background: 'rgba(99, 102, 241, 0.15)', color: '#a5b4fc',
+                              background: `rgba(${SKILL_COLORS[member.skill] ? '99,102,241' : '99,102,241'}, 0.15)`, color: '#a5b4fc',
                               border: '1px solid rgba(99, 102, 241, 0.3)',
                             }}>
-                              {SKILL_ICONS[member.skill] || '🔧'} {member.skill}
+                              {member.skill}
                             </span>
                             <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{member.experience}</span>
                           </div>

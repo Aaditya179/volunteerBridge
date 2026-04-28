@@ -5,7 +5,7 @@
 
 "use client";
 
-import { AlertTriangle, Users, Clock, TrendingUp } from "lucide-react";
+import { AlertCircle, Zap, CheckCircle2, Star } from "lucide-react";
 import { useNeeds } from "@/hooks/useFirestore";
 
 export default function ImpactCounters() {
@@ -21,28 +21,28 @@ export default function ImpactCounters() {
       value: loading ? '—' : String(activeNeedsCount),
       change: '+23%',
       color: '#ef4444',
-      icon: '🔥',
+      Icon: AlertCircle,
     },
     {
       label: 'Avg Match Time',
       value: loading ? '—' : `${avgMatchTime}m`,
       change: '-68%',
       color: '#22d3ee',
-      icon: '⚡',
+      Icon: Zap,
     },
     {
       label: 'Volunteers Deployed',
       value: loading ? '—' : String(deployedCount),
       change: '+15%',
       color: '#22c55e',
-      icon: '✓',
+      Icon: CheckCircle2,
     },
     {
       label: 'Impact Score',
       value: '4.8',
       change: '+42%',
       color: '#f59e0b',
-      icon: '⭐',
+      Icon: Star,
     },
   ];
 
@@ -57,7 +57,7 @@ export default function ImpactCounters() {
             cursor: 'default',
           }}
         >
-          <div style={{ fontSize: '24px', marginBottom: '8px' }}>{s.icon}</div>
+          <div style={{ marginBottom: '8px' }}><s.Icon size={22} color={s.color} /></div>
           <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 500 }}>
             {s.label}
           </p>
