@@ -1,5 +1,4 @@
 "use client";
-import { useState } from "react";
 import AuthGuard from "@/components/shell/AuthGuard";
 import Sidebar from "@/components/shell/Sidebar";
 import TopBar from "@/components/shell/TopBar";
@@ -10,70 +9,30 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-
   return (
     <AuthGuard>
       {/* Command Bar — available on every dashboard page */}
       <CommandBar />
 
-      {/* Outer div */}
-      <div 
-        style={{ display: 'flex', flexDirection: 'row', minHeight: '100vh', backgroundColor: '#F8FAFC' }}
-      >
-        
-        {/* Mobile backdrop */}
-        {sidebarOpen && (
-          <div
-            onClick={() => setSidebarOpen(false)}
+      {/* Outer wrapper */}
+      <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-primary)' }}>
+        {/* Sidebar (icon-only, 72px) */}
+        <Sidebar />
+
+        {/* Main content area */}
+        <div className="main-content" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+          <TopBar />
+
+          <main
             style={{
-              position: 'fixed',
-              inset: 0,
-              zIndex: 40,
-              backgroundColor: 'rgba(0,0,0,0.5)',
-              display: window.innerWidth >= 768 ? 'none' : 'block' // approximation without tailwind
-            }}
-          />
-        )}
-
-        {/* Sidebar wrapper */}
-        <div 
-          style={{
-            position: 'fixed',
-            left: 0,
-            top: 0,
-            bottom: 0,
-            width: '240px',
-            zIndex: 50,
-            backgroundColor: '#0F1724',
-            display: sidebarOpen ? 'block' : (typeof window !== 'undefined' && window.innerWidth >= 768 ? 'block' : 'none'),
-          }}
-        >
-          <Sidebar onLogoClick={() => setSidebarOpen(false)} />
-        </div>
-
-        {/* Main area */}
-        <div 
-          style={{ 
-            display: 'flex',
-            flexDirection: 'column',
-            flex: 1,
-            marginLeft: typeof window !== 'undefined' && window.innerWidth >= 768 ? '240px' : '0' 
-          }}
-        >
-          <TopBar onMenuClick={() => setSidebarOpen(true)} />
-          
-          <main 
-            style={{ 
               flex: 1,
               overflow: 'auto',
-              padding: '24px'
+              padding: '32px',
             }}
           >
             {children}
           </main>
         </div>
-
       </div>
     </AuthGuard>
   );

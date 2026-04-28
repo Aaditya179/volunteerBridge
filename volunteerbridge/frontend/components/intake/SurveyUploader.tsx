@@ -1,5 +1,6 @@
 /**
  * SurveyUploader — Drag-and-drop image upload with Gemini extraction.
+ * Dark glassmorphism theme.
  */
 
 "use client";
@@ -61,7 +62,7 @@ export default function SurveyUploader({
       setSuccess(true);
       setTimeout(() => {
         onExtracted(result);
-      }, 500); // Trigger side effect smoothly
+      }, 500);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Extraction failed");
     } finally {
@@ -104,27 +105,12 @@ export default function SurveyUploader({
 
   if (success) {
     return (
-      <div 
-        className="flex flex-col items-center justify-center"
-        style={{ padding: '40px', gap: '16px' }}
-      >
-        <CheckCircle2 size={48} color="#1D9E75" />
-        <span style={{ fontSize: '16px', fontWeight: 600, color: '#1A202C' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px', gap: '16px' }}>
+        <CheckCircle2 size={48} color="#22c55e" />
+        <span style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)' }}>
           Upload successful!
         </span>
-        <button
-          onClick={resetState}
-          style={{
-            marginTop: '8px',
-            padding: '8px 16px',
-            border: '1px solid #185FA5',
-            color: '#185FA5',
-            background: 'none',
-            borderRadius: '6px',
-            fontSize: '14px',
-            cursor: 'pointer'
-          }}
-        >
+        <button onClick={resetState} className="btn-secondary" style={{ padding: '8px 16px', fontSize: '14px' }}>
           Upload another
         </button>
       </div>
@@ -133,124 +119,104 @@ export default function SurveyUploader({
 
   const hasInput = activeTab === "image" ? file !== null : textInput.trim().length > 0;
   const isSubmitDisabled = loading || !hasInput;
-  const submitBgColor = isSubmitDisabled ? "#94A3B8" : "#185FA5";
 
   return (
-    <div className="flex flex-col" style={{ gap: '20px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       
       {/* Tabs */}
-      <div 
-        className="flex flex-row relative"
-        style={{ gap: '16px', borderBottom: '1px solid #E2E8F0', paddingBottom: '8px' }}
-      >
-        <div 
-          onClick={() => setActiveTab("image")}
-          style={{
-            position: 'relative',
-            cursor: 'pointer',
-            color: activeTab === "image" ? '#185FA5' : '#64748B',
-            fontWeight: activeTab === "image" ? 600 : 500,
-          }}
-          onMouseEnter={(e) => { if (activeTab !== "image") e.currentTarget.style.color = '#1A202C'; }}
-          onMouseLeave={(e) => { if (activeTab !== "image") e.currentTarget.style.color = '#64748B'; }}
-        >
-          Image Upload
-          {activeTab === "image" && (
-            <div style={{ position: 'absolute', bottom: '-9px', left: 0, right: 0, borderBottom: '2px solid #185FA5' }} />
-          )}
-        </div>
-        
-        <div 
-          onClick={() => setActiveTab("text")}
-          style={{
-            position: 'relative',
-            cursor: 'pointer',
-            color: activeTab === "text" ? '#185FA5' : '#64748B',
-            fontWeight: activeTab === "text" ? 600 : 500,
-          }}
-          onMouseEnter={(e) => { if (activeTab !== "text") e.currentTarget.style.color = '#1A202C'; }}
-          onMouseLeave={(e) => { if (activeTab !== "text") e.currentTarget.style.color = '#64748B'; }}
-        >
-          Text Input
-          {activeTab === "text" && (
-            <div style={{ position: 'absolute', bottom: '-9px', left: 0, right: 0, borderBottom: '2px solid #185FA5' }} />
-          )}
-        </div>
+      <div style={{ display: 'flex', gap: '16px', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '8px' }}>
+        {(['image', 'text'] as const).map((tab) => (
+          <div
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            style={{
+              position: 'relative', cursor: 'pointer',
+              color: activeTab === tab ? '#a5b4fc' : 'var(--text-muted)',
+              fontWeight: activeTab === tab ? 600 : 500,
+              fontSize: '14px',
+              transition: 'color 0.2s',
+            }}
+          >
+            {tab === 'image' ? 'Image Upload' : 'Text Input'}
+            {activeTab === tab && (
+              <div style={{
+                position: 'absolute', bottom: '-9px', left: 0, right: 0,
+                borderBottom: '2px solid #6366f1',
+              }} />
+            )}
+          </div>
+        ))}
       </div>
 
       {error && (
-        <div style={{ padding: '8px 12px', backgroundColor: '#FEE2E2', border: '1px solid #E24B4A', borderRadius: '6px', fontSize: '13px', color: '#E24B4A' }}>
+        <div style={{
+          padding: '8px 12px',
+          background: 'rgba(239, 68, 68, 0.1)',
+          border: '1px solid rgba(239, 68, 68, 0.3)',
+          borderRadius: '8px', fontSize: '13px', color: '#fca5a5',
+        }}>
           {error}
         </div>
       )}
 
       {/* Tab Contents */}
       {activeTab === "image" ? (
-        <div className="flex flex-col" style={{ gap: '16px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           {!file && (
-             <>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileChange}
-                  style={{ display: 'none' }}
-                />
-                <div
-                  onClick={handleClick}
-                  onDrop={handleDrop}
-                  onDragOver={handleDragOver}
-                  onDragLeave={handleDragLeave}
-                  className="flex flex-col items-center justify-center"
-                  style={{
-                    height: '200px',
-                    border: dragging ? '2px dashed #185FA5' : '2px dashed #CBD5E1',
-                    backgroundColor: dragging ? '#EFF6FF' : '#F8FAFC',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s'
-                  }}
-                  onMouseEnter={(e) => !dragging && (e.currentTarget.style.backgroundColor = '#F1F5F9')}
-                  onMouseLeave={(e) => !dragging && (e.currentTarget.style.backgroundColor = '#F8FAFC')}
-                >
-                  <UploadCloud size={40} color="#94A3B8" />
-                  <p style={{ fontSize: '14px', color: '#64748B', marginTop: '12px', margin: '12px 0 0 0' }}>
-                    <span style={{ fontWeight: 600, color: '#185FA5' }}>Click to upload</span> or drag and drop
-                  </p>
-                  <p style={{ fontSize: '12px', color: '#94A3B8', marginTop: '4px', margin: '4px 0 0 0' }}>
-                    PNG, JPG up to 10MB
-                  </p>
-                </div>
-             </>
+            <>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleFileChange}
+                style={{ display: 'none' }}
+              />
+              <div
+                onClick={handleClick}
+                onDrop={handleDrop}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                className={`upload-zone ${dragging ? 'drag-over' : ''}`}
+                style={{
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                  minHeight: '200px',
+                }}
+              >
+                <UploadCloud size={40} color="var(--text-muted)" />
+                <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginTop: '12px' }}>
+                  <span style={{ fontWeight: 600, color: '#a5b4fc' }}>Click to upload</span> or drag and drop
+                </p>
+                <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                  PNG, JPG up to 10MB
+                </p>
+              </div>
+            </>
           )}
 
           {file && (
-            <div 
-              className="flex flex-row items-center justify-between"
-              style={{
-                padding: '12px',
-                border: '1px solid #E2E8F0',
-                borderRadius: '8px',
-                backgroundColor: '#F8FAFC',
-                gap: '12px'
-              }}
-            >
-              <div className="flex flex-row items-center" style={{ gap: '12px', overflow: 'hidden' }}>
-                <ImageIcon size={24} color="#185FA5" className="flex-shrink-0" />
-                <div className="flex flex-col" style={{ overflow: 'hidden' }}>
-                  <span style={{ fontSize: '13px', color: '#1A202C', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: '12px', borderRadius: '10px',
+              background: 'rgba(99, 102, 241, 0.05)',
+              border: '1px solid rgba(99, 102, 241, 0.2)',
+              gap: '12px',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', overflow: 'hidden' }}>
+                <ImageIcon size={24} color="#6366f1" style={{ flexShrink: 0 }} />
+                <div style={{ overflow: 'hidden' }}>
+                  <span style={{ fontSize: '13px', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'block' }}>
                     {file.name}
                   </span>
-                  <span style={{ fontSize: '12px', color: '#64748B' }}>
+                  <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
                     {formatFileSize(file.size)}
                   </span>
                 </div>
               </div>
-              <button 
+              <button
                 onClick={() => setFile(null)}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', color: '#94A3B8' }}
-                onMouseEnter={e => e.currentTarget.style.color = '#E24B4A'}
-                onMouseLeave={e => e.currentTarget.style.color = '#94A3B8'}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', color: 'var(--text-muted)' }}
+                onMouseEnter={e => e.currentTarget.style.color = '#ef4444'}
+                onMouseLeave={e => e.currentTarget.style.color = 'var(--text-muted)'}
               >
                 <X size={16} />
               </button>
@@ -263,19 +229,15 @@ export default function SurveyUploader({
           onChange={(e) => setTextInput(e.target.value)}
           placeholder="Paste survey text or unstructured report data here..."
           style={{
-            width: '100%',
-            minHeight: '120px',
-            padding: '12px',
-            border: '1px solid #E2E8F0',
-            borderRadius: '8px',
-            fontSize: '14px',
-            color: '#1A202C',
-            backgroundColor: 'white',
-            resize: 'vertical',
-            outline: 'none',
+            width: '100%', minHeight: '120px', padding: '12px',
+            border: '1px solid var(--border-subtle)',
+            borderRadius: '10px', fontSize: '14px',
+            color: 'var(--text-primary)',
+            background: 'rgba(17, 24, 39, 0.5)',
+            resize: 'vertical', outline: 'none',
           }}
-          onFocus={(e) => e.target.style.borderColor = '#185FA5'}
-          onBlur={(e) => e.target.style.borderColor = '#E2E8F0'}
+          onFocus={(e) => e.target.style.borderColor = '#6366f1'}
+          onBlur={(e) => e.target.style.borderColor = 'var(--border-subtle)'}
         />
       )}
 
@@ -283,21 +245,13 @@ export default function SurveyUploader({
       <button
         onClick={handleUploadClick}
         disabled={isSubmitDisabled}
-        className="flex flex-row justify-center items-center"
+        className="btn-primary"
         style={{
-          width: '100%',
-          padding: '12px',
-          backgroundColor: submitBgColor,
-          color: 'white',
-          fontWeight: 600,
-          borderRadius: '8px',
-          gap: '8px',
+          width: '100%', padding: '12px', fontSize: '14px',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+          opacity: isSubmitDisabled ? 0.5 : 1,
           cursor: isSubmitDisabled ? 'not-allowed' : 'pointer',
-          border: 'none',
-          transition: 'background-color 0.2s',
         }}
-        onMouseEnter={(e) => { if (!isSubmitDisabled) e.currentTarget.style.backgroundColor = '#0F3D6B'; }}
-        onMouseLeave={(e) => { if (!isSubmitDisabled) e.currentTarget.style.backgroundColor = submitBgColor; }}
       >
         {loading ? (
           <>
@@ -308,7 +262,6 @@ export default function SurveyUploader({
           "Extract Information"
         )}
       </button>
-
     </div>
   );
 }

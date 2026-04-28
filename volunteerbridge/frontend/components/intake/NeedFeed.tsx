@@ -1,5 +1,6 @@
 /**
  * NeedFeed — Real-time scrolling feed of incoming community needs.
+ * Dark glassmorphism theme.
  */
 
 "use client";
@@ -27,12 +28,15 @@ export default function NeedFeed() {
   
   if (loading) {
     return (
-      <div className="flex flex-col w-full text-center">
+      <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
         {[1, 2, 3].map((i) => (
-          <div 
-            key={i} 
-            className="animate-pulse w-full"
-            style={{ height: '60px', backgroundColor: '#F1F5F9', borderBottom: '1px solid #FFFFFF' }} 
+          <div
+            key={i}
+            style={{
+              height: '60px',
+              background: 'rgba(99, 102, 241, 0.05)',
+              borderBottom: '1px solid var(--border-subtle)',
+            }}
           />
         ))}
       </div>
@@ -43,12 +47,14 @@ export default function NeedFeed() {
 
   if (activeNeeds.length === 0) {
     return (
-      <div 
-        className="flex flex-col items-center justify-center"
-        style={{ padding: '40px' }}
+      <div
+        style={{
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          padding: '40px',
+        }}
       >
-        <Brain size={40} color="#94A3B8" />
-        <span style={{ color: '#94A3B8', fontSize: '14px', marginTop: '12px' }}>
+        <Brain size={40} color="var(--text-muted)" />
+        <span style={{ color: 'var(--text-muted)', fontSize: '14px', marginTop: '12px' }}>
           No active needs
         </span>
       </div>
@@ -56,74 +62,74 @@ export default function NeedFeed() {
   }
 
   return (
-    <div className="flex flex-col w-full">
+    <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
       {activeNeeds.map((need) => {
-        let barColor = "#639922";
-        let badgeBg = "#DCFCE7";
-        let badgeText = "#639922";
+        let barColor = "#22c55e";
+        let badgeBg = "rgba(34, 197, 94, 0.15)";
+        let badgeText = "#86efac";
+        let badgeBorder = "rgba(34, 197, 94, 0.3)";
         let badgeLabel = "LOW";
 
         if (need.urgency_score >= 8) {
-          barColor = "#E24B4A";
-          badgeBg = "#FEE2E2";
-          badgeText = "#E24B4A";
+          barColor = "#ef4444";
+          badgeBg = "rgba(239, 68, 68, 0.15)";
+          badgeText = "#fca5a5";
+          badgeBorder = "rgba(239, 68, 68, 0.3)";
           badgeLabel = "CRITICAL";
         } else if (need.urgency_score >= 5) {
-          barColor = "#EF9F27";
-          badgeBg = "#FEF3C7";
-          badgeText = "#EF9F27";
+          barColor = "#f59e0b";
+          badgeBg = "rgba(245, 158, 11, 0.15)";
+          badgeText = "#fcd34d";
+          badgeBorder = "rgba(245, 158, 11, 0.3)";
           badgeLabel = "MODERATE";
         }
 
         return (
-          <div 
+          <div
             key={need.id}
-            className="flex flex-row items-center cursor-pointer"
             style={{
-              borderBottom: '1px solid #F1F5F9'
+              display: 'flex', flexDirection: 'row', alignItems: 'center',
+              borderBottom: '1px solid var(--border-subtle)',
+              cursor: 'pointer',
+              transition: 'background-color 0.2s',
             }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F8FAFC'}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(99, 102, 241, 0.05)'}
             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
           >
             {/* Left bar */}
-            <div 
-              className="flex-shrink-0 self-stretch"
-              style={{ width: '4px', backgroundColor: barColor }}
+            <div
+              style={{ width: '4px', alignSelf: 'stretch', backgroundColor: barColor, flexShrink: 0 }}
             />
-            
+
             {/* Content */}
-            <div 
-              className="flex-1 flex flex-col justify-center"
-              style={{ padding: '12px 16px' }}
+            <div
+              style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '12px 16px' }}
             >
-              <span style={{ fontSize: '14px', fontWeight: 500, color: '#1A202C', lineHeight: 1 }}>
+              <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1 }}>
                 {need.need_type}
               </span>
-              <span style={{ fontSize: '12px', color: '#64748B', marginTop: '2px', lineHeight: 1 }}>
+              <span style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px', lineHeight: 1 }}>
                 {need.location.zone}
               </span>
             </div>
 
             {/* Right */}
-            <div 
-              className="flex flex-col items-end flex-shrink-0"
-              style={{ padding: '12px 16px', gap: '4px' }}
+            <div
+              style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', flexShrink: 0, padding: '12px 16px', gap: '4px' }}
             >
-              <span 
+              <span
                 style={{
-                  fontSize: '10px',
-                  fontWeight: 600,
-                  padding: '2px 8px',
-                  borderRadius: '999px',
-                  textTransform: 'uppercase',
-                  backgroundColor: badgeBg,
-                  color: badgeText,
-                  lineHeight: 1
+                  fontSize: '10px', fontWeight: 700,
+                  padding: '3px 10px', borderRadius: '20px',
+                  textTransform: 'uppercase', letterSpacing: '0.05em',
+                  backgroundColor: badgeBg, color: badgeText,
+                  border: `1px solid ${badgeBorder}`,
+                  lineHeight: 1,
                 }}
               >
                 {badgeLabel}
               </span>
-              <span style={{ fontSize: '11px', color: '#94A3B8', lineHeight: 1 }}>
+              <span style={{ fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1 }}>
                 {timeAgo(need.created_at)}
               </span>
             </div>

@@ -1,5 +1,5 @@
 /**
- * Crisis Map page — Full-height map with assignment panel overlay.
+ * Crisis Map page — Dark glassmorphism theme.
  */
 
 "use client";
@@ -17,34 +17,32 @@ export default function MapPage() {
   const pendingNeeds = needs.filter(n => n.status === "unassigned").length;
 
   return (
-    <div 
-      className="flex flex-col"
+    <div
       style={{
         position: 'relative',
-        height: 'calc(100vh - 64px)', 
-        margin: '-24px', 
-        overflow: 'hidden'
+        height: 'calc(100vh - 64px)',
+        margin: '-32px',
+        overflow: 'hidden',
+        display: 'flex', flexDirection: 'column',
       }}
     >
       {/* Floating Panel Top-Left */}
-      <div 
+      <div
+        className="glass"
         style={{
           position: 'absolute',
           top: '16px',
           left: '16px',
           zIndex: 5,
-          backgroundColor: 'rgba(255, 255, 255, 0.9)',
-          border: '1px solid #E2E8F0',
-          borderRadius: '6px',
+          borderRadius: '12px',
           padding: '12px 16px',
-          backdropFilter: 'blur(4px)',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+          boxShadow: '0 4px 15px rgba(0,0,0,0.3)',
         }}
       >
-        <p style={{ fontSize: '14px', fontWeight: 700, color: '#1A202C', margin: 0, lineHeight: 1 }}>
+        <p style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: 0, lineHeight: 1 }}>
           {pendingNeeds} Needs Pending
         </p>
-        <p style={{ fontSize: '12px', color: '#64748B', marginTop: '4px', margin: '4px 0 0 0', lineHeight: 1 }}>
+        <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px', margin: '4px 0 0 0', lineHeight: 1 }}>
           Click a marker to assign
         </p>
       </div>
@@ -65,8 +63,8 @@ export default function MapPage() {
             style={{
               position: 'fixed',
               inset: 0,
-              backgroundColor: 'transparent',
-              zIndex: 30
+              backgroundColor: 'rgba(0,0,0,0.3)',
+              zIndex: 30,
             }}
           />
           <AssignmentPanel
